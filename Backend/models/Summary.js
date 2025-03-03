@@ -10,5 +10,5 @@ const summarySchema = new mongoose.Schema({
 });
 
 const Summary = mongoose.model("Summary", summarySchema);
-
+//added comment
 module.exports = Summary;
