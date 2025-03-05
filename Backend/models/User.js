@@ -11,7 +11,18 @@ const UserSchema = new mongoose.Schema({
     },
   },
   picture: String,
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  subscription: {
+    type: String,
+    enum: ['free', 'basic', 'premium'],
+    default: 'free'
+  },
+  paymentHistory: [{
+    amount: Number,
+    date: { type: Date, default: Date.now },
+    description: String,
+    status: String
+  }]
 });
 
 module.exports = mongoose.model("User", UserSchema);

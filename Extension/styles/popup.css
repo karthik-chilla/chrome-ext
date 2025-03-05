@@ -270,7 +270,7 @@ button:hover {
 }
 
 /* Summary */
-#summary {
+#summary-container{
   margin-top: 15px;
   font-size: 14px;
   line-height: 1.6;

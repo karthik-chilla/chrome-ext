@@ -5,22 +5,31 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-// Google Login
 router.get(
   "/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-// Google Callback
+
 router.get(
   "/google/callback",
   passport.authenticate("google", { failureRedirect: "/login" }),
   (req, res) => {
-    res.redirect("chrome-extension://extension-id/popup.html");
+   
+    res.send(`
+      <html>
+        <body>
+          <script>
+            // This will be received by the extension
+            window.close();
+          </script>
+        </body>
+      </html>
+    `);
   }
 );
 
-// Signup with Email
+
 router.post("/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -34,7 +43,7 @@ router.post("/signup", async (req, res) => {
     user = new User({ name, email, password: hashedPassword });
     await user.save();
 
-    // Log the user in after signup
+    
     req.login(user, (err) => {
       if (err) {
         return res.status(500).json({ message: "Error logging in after signup" });
@@ -54,7 +63,7 @@ router.post("/signup", async (req, res) => {
   }
 });
 
-// Login with Email
+
 router.post("/login", (req, res, next) => {
   passport.authenticate("local", (err, user, info) => {
     if (err) {
@@ -80,7 +89,7 @@ router.post("/login", (req, res, next) => {
   })(req, res, next);
 });
 
-// Logout
+
 router.get("/logout", (req, res) => {
   req.logout((err) => {
     if (err) {
@@ -90,7 +99,7 @@ router.get("/logout", (req, res) => {
   });
 });
 
-// Check authentication status
+
 router.get("/status", (req, res) => {
   if (req.isAuthenticated()) {
     return res.json({ 

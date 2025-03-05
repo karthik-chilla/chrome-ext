@@ -20,4 +20,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true; // Required for async sendResponse
   }
+  
+  if (message.action === "openPopup") {
+    chrome.action.openPopup();
+    return true;
+  }
 });
+
+// Listen for Google Auth completion
+chrome.webNavigation?.onCompleted.addListener((details) => {
+  if (details.url.includes('localhost:3000/auth/google/callback')) {
+    // Refresh the auth status
+    chrome.runtime.sendMessage({action: "checkAuth"});
+  }
+}, {url: [{urlContains: 'localhost:3000/auth/google/callback'}]});
