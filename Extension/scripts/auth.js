@@ -109,15 +109,17 @@ document.addEventListener('DOMContentLoaded', function() {
   googleSignupButton.addEventListener('click', openGoogleAuth);
 
   function openGoogleAuth() {
-    chrome.tabs.create({ url: 'http://localhost:3000/auth/google' });
+    // Open Google auth in a new window
+    const authWindow = window.open('http://localhost:3000/auth/google', 'googleAuth', 'width=500,height=600');
     
-    // Set up a listener to check when the auth is complete
-    chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo, tab) {
-      if (changeInfo.url && changeInfo.url.includes('chrome-extension://')) {
-        chrome.tabs.onUpdated.removeListener(listener);
-        checkAuthStatus();
+    // Check periodically if the window was closed
+    const checkWindowClosed = setInterval(() => {
+      if (authWindow.closed) {
+        clearInterval(checkWindowClosed);
+        // Check auth status after window is closed
+        setTimeout(checkAuthStatus, 1000);
       }
-    });
+    }, 500);
   }
 
   // Handle logout
