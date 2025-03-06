@@ -122,11 +122,24 @@ document.addEventListener("DOMContentLoaded", () => {
         
         return;
       }
+
+      const getHostname = (url) => {
+        try {
+          if(!isValidUrl(url)){
+            return "Extension page";
+          }
+          return new URL(url).hostname;
+        } catch (e) {
+          return "Invalid URL";
+        }
+      };
       
+
+
       pastSummariesList.innerHTML = summaries.map(summary => `
         <div class="summary-card">
           <div class="summary-title">${summary.title || "Untitled"}</div>
-          <div class="summary-domain">${summary.domain || new URL(summary.url).hostname}</div>
+         <div class="summary-domain">${summary.domain || getHostname(summary.url)}</div>
           <div class="summary-text">${summary.shortSummary || summary.longSummary}</div>
           
           <div class="summary-tags">
@@ -288,7 +301,6 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `).join("");
       
-     
       document.querySelectorAll(".subscribe-button").forEach(button => {
         button.addEventListener("click", () => {
           createCheckoutSession(button.dataset.plan);
@@ -305,84 +317,136 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
   
-  
-  async function fetchPaymentHistory() {
-    try {
-      const response = await fetch("http://localhost:3000/payment/history", {
-        credentials: "include"
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to fetch payment history");
-      }
-      
-      const data = await response.json();
-      
-      if (data.paymentHistory.length === 0) {
-        paymentHistory.innerHTML = `
-          <div class="empty-state">
-            <p>No payment history found.</p>
-          </div>
-        `;
-        return;
-      }
-      
-      paymentHistory.innerHTML = data.paymentHistory.map(payment => {
-        const date = new Date(payment.date);
-        const formattedDate = date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-        
-        return `
-          <div class="payment-item">
-            <div class="payment-date">${formattedDate}</div>
-            <div class="payment-amount">$${payment.amount.toFixed(2)}
-              <span class="payment-status status-${payment.status}">${payment.status}</span>
-            </div>
-            <div class="payment-description">${payment.description}</div>
-          </div>
-        `;
-      }).join("");
-      
-    } catch (error) {
-      console.error("Failed to fetch payment history:", error);
+ async function fetchPaymentHistory() {
+  try {
+    const response = await fetch("http://localhost:3000/payment/history", {
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch payment history");
+    }
+
+    const data = await response.json();
+    console.log("Fetched payment history:", data);
+
+    if (!data.paymentHistory || data.paymentHistory.length === 0) {
       paymentHistory.innerHTML = `
         <div class="empty-state">
-          <p>Error loading payment history. Please try again.</p>
+          <p>No payment history found.</p>
         </div>
       `;
+      return;
     }
-  }
-  
- 
-  async function createCheckoutSession(planId) {
-    try {
-      const response = await fetch("http://localhost:3000/payment/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ planId }),
-        credentials: "include"
+
+    paymentHistory.innerHTML = data.paymentHistory.map(payment => {
+      const date = new Date(payment.date);
+      const formattedDate = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       });
-      
-      if (!response.ok) {
-        throw new Error("Failed to create checkout session");
+
+      return `
+        <div class="payment-item">
+          <div class="payment-date">${formattedDate}</div>
+          <div class="payment-amount">$${payment.amount.toFixed(2)}</div>
+          <div class="payment-description">${payment.description}</div>
+          <div class="payment-status">Status: ${payment.status}</div>
+        </div>
+      `;
+    }).join("");
+
+  } catch (error) {
+    console.error("Failed to fetch payment history:", error);
+    paymentHistory.innerHTML = `
+      <div class="empty-state">
+        <p>Error loading payment history. Please try again.</p>
+      </div>
+    `;
+  }
+}
+
+// Create checkout session
+async function createCheckoutSession(planId) {
+  try {
+    const extensionId = chrome.runtime.id; // Get the extension ID dynamically
+    console.log("Creating checkout session for plan:", planId);
+
+    const response = await fetch("http://localhost:3000/payment/create-checkout-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Extension-Id": extensionId // Pass the extension ID
+      },
+      body: JSON.stringify({ planId }),
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to create checkout session");
+    }
+
+    const data = await response.json();
+    console.log("Stripe session URL:", data.url);
+
+    // Open Stripe checkout in a new window
+    const stripeWindow = window.open(data.url, "_blank");
+
+    // Listen for payment completion
+    window.addEventListener('message', async function(event) {
+      if (event.data.type === 'payment_success') {
+        const sessionId = event.data.sessionId;
+        console.log("Payment success, session ID:", sessionId);
+
+        // Notify the server about successful payment
+        await fetch("http://localhost:3000/payment/payment-success", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ session_id: sessionId }),
+          credentials: "include"
+        });
+
+        // Refresh the payment history
+        fetchPaymentHistory();
+        alert("Payment successful! Your subscription has been updated.");
+      } else if (event.data.type === 'payment_cancel') {
+        alert("Payment was canceled.");
       }
-      
-      const data = await response.json();
-      
-      
-      window.open(data.url, "_blank");
-      
-    } catch (error) {
-      console.error("Payment error:", error);
-      alert("Failed to process payment. Please try again.");
+    });
+
+  } catch (error) {
+    console.error("Payment error:", error);
+    alert("Failed to process payment. Please try again.");
+  }
+}
+
+  function checkPaymentStatus() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const sessionId = urlParams.get('session_id');
+  
+    if (paymentStatus === 'success' && sessionId) {
+      // Post message to parent window
+      if (window.opener) {
+        window.opener.postMessage({
+          type: 'payment_success',
+          sessionId: sessionId
+        }, '*');
+  
+        // Close the window
+        window.close();
+      } else {
+        // Handle case when opened directly
+        createCheckoutSession(sessionId);
+      }
     }
   }
   
+  // Call checkPaymentStatus on page load
+  checkPaymentStatus();
   
   async function downloadSummary(url, type) {
     try {
@@ -423,4 +487,19 @@ document.addEventListener("DOMContentLoaded", () => {
       errorDiv.remove();
     }, 5000);
   }
+
+  document.getElementById("file-upload").click();
+  paymentLink.addEventListener("click", () => {
+    setActiveSection(paymentLink, paymentContent);
+    fetchPlans();
+    fetchPaymentHistory();
+  });
+
+  document.addEventListener("DOMContentLoaded",function(){
+    fetchPaymentHistory();
+
+  })
+
+
+
 });

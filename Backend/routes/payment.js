@@ -3,18 +3,37 @@ const router = express.Router();
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const User = require("../models/User");
 
-
+// Get subscription plans
 router.get("/plans", (req, res) => {
   const plans = [
-   
-
-    
+    {
+      id: "basic",
+      name: "Basic Plan",
+      price: 4.99,
+      features: [
+        "Unlimited summaries",
+        "Save up to 50 summaries",
+        "Basic tag generation"
+      ]
+    },
+    {
+      id: "premium",
+      name: "Premium Plan",
+      price: 9.99,
+      features: [
+        "Unlimited summaries",
+        "Save unlimited summaries",
+        "Advanced tag generation",
+        "Priority support",
+        "Export to PDF/Word"
+      ]
+    }
   ];
   
   res.json(plans);
 });
 
-
+// Create checkout session
 router.post("/create-checkout-session", async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -22,24 +41,30 @@ router.post("/create-checkout-session", async (req, res) => {
   
   try {
     const { planId } = req.body;
+    const extensionId=req.headers['x-extension-id'];
+
+    if (!extensionId) {
+      return res.status(400).json({ error: "Extension ID not provided" });
+    }
     
     
+    // Get plan details
     let planDetails;
     if (planId === "basic") {
       planDetails = {
         name: "Basic Plan",
-        price: 499 
+        price: 499 // in cents
       };
     } else if (planId === "premium") {
       planDetails = {
         name: "Premium Plan",
-        price: 999 
+        price: 999 // in cents
       };
     } else {
       return res.status(400).json({ error: "Invalid plan" });
     }
     
-  
+    // Create checkout session
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: [
@@ -55,8 +80,9 @@ router.post("/create-checkout-session", async (req, res) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/payment-cancel`,
+      success_url: `http://localhost:3000/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `http://localhost:3000/payment/cancel`,
+      client_reference_id: req.user._id.toString(),
       metadata: {
         userId: req.user._id.toString(),
         planId: planId
@@ -70,50 +96,39 @@ router.post("/create-checkout-session", async (req, res) => {
   }
 });
 
-
-router.post("/webhook", express.raw({ type: "application/json" }), async (req, res) => {
-  const sig = req.headers["stripe-signature"];
-  let event;
-  
+// Payment success handler
+router.post("/payment-success", async (req, res) => {
   try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-  } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-  
-  
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object;
-    
-   
-    try {
-      const userId = session.metadata.userId;
-      const planId = session.metadata.planId;
-      
-     
-      await User.findByIdAndUpdate(userId, {
-        subscription: planId,
+    const { session_id } = req.body;
+
+    // Retrieve the session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    if (session.payment_status === "paid") {
+      // Update user subscription and payment history
+      await User.findByIdAndUpdate(session.client_reference_id, {
+        subscription: session.metadata.planId,
         $push: {
           paymentHistory: {
-            amount: session.amount_total / 100,
-            description: `Subscription to ${planId} plan`,
-            status: "completed"
+            amount: session.amount_total / 100, // Convert cents to dollars
+            description: `Subscription to ${session.metadata.planId} plan`,
+            status: "completed",
+            date: new Date() // Add the current date
           }
         }
       });
-    } catch (error) {
-      console.error("Error updating user subscription:", error);
+
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ error: "Payment not completed" });
     }
+  } catch (error) {
+    console.error("Payment success handler error:", error);
+    res.status(500).json({ error: "Failed to process payment success" });
   }
-  
-  res.json({ received: true });
 });
 
-
+// Get user payment history
 router.get("/history", async (req, res) => {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Not authenticated" });
@@ -126,6 +141,18 @@ router.get("/history", async (req, res) => {
       paymentHistory: user.paymentHistory || []
     });
   } catch (error) {
+    res.status(500).json({ error: "Failed to fetch payment history" });
+  }
+});
+
+router.get("/payment/history", async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    res.json({
+      paymentHistory: user.paymentHistory || []
+    });
+  } catch (error) {
+    console.error("Failed to fetch payment history:", error);
     res.status(500).json({ error: "Failed to fetch payment history" });
   }
 });
