@@ -4,7 +4,7 @@ const dotenv = require("dotenv").config();
 const summaryRouter = require("./routes/Summary");
 const authRouter = require("./routes/auth");
 const chatRouter = require("./routes/chat");
-//const paymentRouter = require("./routes/payment");
+const paymentRouter = require("./routes/payment");
 const passport = require("passport");
 const session = require("express-session");
 const cors = require("cors");
@@ -54,7 +54,7 @@ app.use("/summarize", summaryRouter);
 app.use("/summaries", summaryRouter);
 app.use("/chat", chatRouter);
 app.use("/auth", authRouter);
-//app.use("/payment", paymentRouter);
+app.use("/payment", paymentRouter);
 
 // User status endpoint
 app.get("/user", (req, res) => {
@@ -87,5 +87,42 @@ app.get("/profile", (req, res) => {
   }
   return res.status(401).json({ error: "Not authenticated" });
 });
+
+
+app.get("/payment/success", (req, res) => {
+  const sessionId = req.query.session_id;
+  res.send(`
+    <html>
+      <body>
+        <script>
+          // Notify the extension that payment was successful
+          window.opener.postMessage({
+            type: 'payment_success',
+            sessionId: '${sessionId}'
+          }, '*');
+          window.close();
+        </script>
+      </body>
+    </html>
+  `);
+});
+
+// Cancel route
+app.get("/payment/cancel", (req, res) => {
+  res.send(`
+    <html>
+      <body>
+        <script>
+          // Notify the extension that payment was canceled
+          window.opener.postMessage({
+            type: 'payment_cancel'
+          }, '*');
+          window.close();
+        </script>
+      </body>
+    </html>
+  `);
+});
+
 
 app.listen(port, () => console.log(`Server started on PORT ${port}`));
