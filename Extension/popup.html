@@ -18,12 +18,20 @@
         <div id="login-form" class="auth-form">
           <h3>Login</h3>
           <input type="email" id="login-email" placeholder="Email" required />
-          <input type="password" id="login-password" placeholder="Password" required />
+          <input
+            type="password"
+            id="login-password"
+            placeholder="Password"
+            required
+          />
           <button id="login-button">Login</button>
           <div class="error-message" id="login-error"></div>
           <div class="google-auth">
             <button id="google-login">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" />
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+                alt="Google"
+              />
               Login with Google
             </button>
           </div>
@@ -34,14 +42,27 @@
 
         <div id="signup-form" class="auth-form hidden">
           <h3>Sign Up</h3>
-          <input type="text" id="signup-name" placeholder="Full Name" required />
+          <input
+            type="text"
+            id="signup-name"
+            placeholder="Full Name"
+            required
+          />
           <input type="email" id="signup-email" placeholder="Email" required />
-          <input type="password" id="signup-password" placeholder="Password" required />
+          <input
+            type="password"
+            id="signup-password"
+            placeholder="Password"
+            required
+          />
           <button id="signup-button">Sign Up</button>
           <div class="error-message" id="signup-error"></div>
           <div class="google-auth">
             <button id="google-signup">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" />
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+                alt="Google"
+              />
               Sign up with Google
             </button>
           </div>
@@ -57,39 +78,72 @@
           <h2>🔍 Web Summarizer</h2>
           <div class="user-info">
             <img id="user-avatar" src="" alt="User" />
-            <div class="dropdown">
-              <button class="dropdown-button">▼</button>
-              <div class="dropdown-content">
-                <span id="user-name"></span>
-                <span id="user-email"></span>
-                <button id="logout-button">Logout</button>
-              </div>
+            <div class="dropdown-content">
+              <span id="user-name"></span>
+              <span id="user-email"></span>
+              <button id="logout-button">Logout</button>
             </div>
           </div>
         </div>
 
-        <div class="toggle-container">
-          <label for="summaryType">Summary Type:</label>
-          <div class="toggle-switch">
-            <span>Short</span>
-            <input type="checkbox" id="summaryType" />
-            <span>Long</span>
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+          <button id="summary-mode-btn" class="mode-btn active">Summary</button>
+          <button id="chatbot-mode-btn" class="mode-btn">Chatbot</button>
+        </div>
+
+        <!-- Summary Mode Content -->
+        <div id="summary-mode" class="mode-content">
+          <div class="toggle-container">
+            <label for="summaryType">Summary Type:</label>
+            <div class="toggle-switch">
+              <span>Short</span>
+              <input type="checkbox" id="summaryType" />
+              <span>Long</span>
+            </div>
+          </div>
+
+          <button id="generate-summary">✨ Generate Summary</button>
+          <button id="more-button" class="more-button">More Options</button>
+
+          <div class="loader" id="summary-loader">
+            <div class="spinner"></div>
+            <p>Generating summary...</p>
+          </div>
+
+          <div id="summary">Summary will be generated here.</div>
+        </div>
+
+        <!-- Chatbot Mode Content -->
+        <div id="chatbot-mode" class="mode-content hidden">
+          <div class="chat-container">
+            <div id="chat-messages">
+              <div class="bot-message">
+                Hi! I can answer any questions about this webpage or any general
+                knowledge questions. What would you like to know?
+              </div>
+            </div>
+            <div class="chat-input-container">
+              <input
+                type="text"
+                id="chat-input"
+                placeholder="Ask me anything..."
+              />
+              <button id="send-message">
+                <i class="bi bi-send"></i>
+              </button>
+            </div>
+          </div>
+          <div class="loader" id="chatbot-loader">
+            <div class="spinner"></div>
+            <p>Processing your question...</p>
           </div>
         </div>
-
-        <button id="generate-summary">✨ Generate Summary</button>
-        <button id="more-button" class="more-button">More Options</button>
-
-        <div class="loader" id="loader">
-          <div class="spinner"></div>
-          <p>Generating summary...</p>
-        </div>
-
-        <div id="summary-container">Summary will be generated here.</div>
       </div>
     </div>
 
     <script src="scripts/auth.js"></script>
     <script src="scripts/popup.js"></script>
+    <script src="scripts/chatbot.js"></script>
   </body>
 </html>
