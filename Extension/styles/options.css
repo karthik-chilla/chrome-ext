@@ -77,7 +77,7 @@ body {
 }
 
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 /* Search bar */
@@ -162,6 +162,7 @@ body {
   border-radius: 4px;
   cursor: pointer;
   font-size: 13px;
+  margin-right: 5px;
   transition: background-color 0.2s ease;
 }
 
@@ -339,60 +340,198 @@ body {
   color: #28a745;
 }
 
-.payment-history {
-  background-color: white;
+/* Admin Panel */
+.admin-header {
+  margin-bottom: 20px;
+}
+
+.admin-stats {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.stat-box {
+  flex: 1;
+  background: white;
+  padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  text-align: center;
 }
 
-.payment-item {
-  padding: 10px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.payment-item:last-child {
-  border-bottom: none;
-}
-
-.payment-date {
+.stat-label {
+  display: block;
   font-size: 14px;
   color: #666;
   margin-bottom: 5px;
 }
 
-.payment-amount {
-  font-size: 16px;
+.stat-value {
+  font-size: 24px;
   font-weight: bold;
-  color: #333;
-  margin-bottom: 5px;
+  color: #007bff;
 }
 
-.payment-description {
+.admin-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.admin-filters input,
+.admin-filters select {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
   font-size: 14px;
-  color: #444;
+}
+
+.admin-filters input {
+  flex: 1;
+}
+
+.users-table {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow-x: auto;
+}
+
+.users-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.users-table th,
+.users-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+.users-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.users-table tr:hover {
+  background: #f8f9fa;
+  cursor: pointer;
+}
+
+.users-table .user-row {
+  transition: background-color 0.2s ease;
+}
+
+.users-table .user-row:hover {
+  background-color: #f0f0f0;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.close-modal {
+  position: absolute;
+  right: 15px;
+  top: 15px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.2s ease;
+}
+
+.close-modal:hover {
+  color: #333;
+}
+
+.user-detail-section {
+  margin-bottom: 25px;
+}
+
+.user-detail-section h5 {
+  font-size: 18px;
+  margin-bottom: 15px;
+  color: #333;
+  border-bottom: 2px solid #007bff;
+  padding-bottom: 8px;
+}
+
+.user-detail-section p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.user-detail-section strong {
+  color: #333;
+  margin-right: 5px;
+}
+
+.login-history,
+.payment-history {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+  font-size: 13px;
+}
+
+.history-item:last-child {
+  border-bottom: none;
 }
 
 .payment-status {
+  padding: 2px 8px;
+  border-radius: 12px;
   font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 10px;
-  display: inline-block;
-  margin-left: 10px;
 }
 
 .status-completed {
-  background-color: #d4edda;
+  background: #d4edda;
   color: #155724;
 }
 
 .status-pending {
-  background-color: #fff3cd;
+  background: #fff3cd;
   color: #856404;
 }
 
 .status-failed {
-  background-color: #f8d7da;
+  background: #f8d7da;
   color: #721c24;
 }
 
@@ -421,4 +560,42 @@ body {
 
 .empty-state button:hover {
   background-color: #0069d9;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+  }
+
+  .main-content {
+    height: auto;
+  }
+
+  .admin-stats {
+    flex-wrap: wrap;
+  }
+
+  .stat-box {
+    flex: 1 1 calc(50% - 10px);
+  }
+
+  .admin-filters {
+    flex-direction: column;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 10px;
+  }
+}
+
+/* Make admin panel visible when needed */
+.admin-only.visible {
+  display: block !important;
 }

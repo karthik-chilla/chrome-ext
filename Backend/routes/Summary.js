@@ -1,8 +1,12 @@
 const express = require("express");
 const summarise = require("../controllers/Summary");
 const Summary = require("../models/Summary");
+const passport = require("passport");
 
 const router = express.Router();
+
+// Protect all routes with JWT authentication
+router.use(passport.authenticate("jwt", { session: false }));
 
 router.post("/", summarise);
 
@@ -38,23 +42,20 @@ router.get("/search", async (req, res) => {
 router.get("/tags", async (req, res) => {
   try {
     const summaries = await Summary.find({}, { tags: 1 });
-    const allTags = summaries.flatMap(summary => summary.tags);
-    
-    // Count occurrences of each tag
+    const allTags = summaries.flatMap((summary) => summary.tags);
+
     const tagCounts = {};
-    allTags.forEach(tag => {
+    allTags.forEach((tag) => {
       tagCounts[tag] = (tagCounts[tag] || 0) + 1;
     });
-    
-    // Convert to array of objects with name and count
+
     const uniqueTags = Object.entries(tagCounts).map(([name, count]) => ({
       name,
-      count
+      count,
     }));
-    
-    // Sort by count (most frequent first)
+
     uniqueTags.sort((a, b) => b.count - a.count);
-    
+
     res.json(uniqueTags);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch tags." });
@@ -65,7 +66,9 @@ router.get("/tags", async (req, res) => {
 router.get("/by-tag/:tag", async (req, res) => {
   try {
     const { tag } = req.params;
-    const summaries = await Summary.find({ tags: tag }).sort({ lastAccessed: -1 });
+    const summaries = await Summary.find({ tags: tag }).sort({
+      lastAccessed: -1,
+    });
     res.json(summaries);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch summaries by tag." });
@@ -80,8 +83,12 @@ router.get("/download", async (req, res) => {
     if (!summary) {
       return res.status(404).json({ error: "Summary not found." });
     }
-    const content = type === "short" ? summary.shortSummary : summary.longSummary;
-    res.setHeader("Content-Disposition", `attachment; filename=${type}-summary.txt`);
+    const content =
+      type === "short" ? summary.shortSummary : summary.longSummary;
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${type}-summary.txt`
+    );
     res.setHeader("Content-Type", "text/plain");
     res.send(content);
   } catch (error) {
@@ -92,10 +99,6 @@ router.get("/download", async (req, res) => {
 // Get user profile summaries
 router.get("/user-summaries", async (req, res) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-    
     const userId = req.user._id;
     const summaries = await Summary.find({ userId }).sort({ lastAccessed: -1 });
     res.json(summaries);

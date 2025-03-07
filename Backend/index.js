@@ -5,8 +5,8 @@ const summaryRouter = require("./routes/Summary");
 const authRouter = require("./routes/auth");
 const chatRouter = require("./routes/chat");
 const paymentRouter = require("./routes/payment");
+const adminRouter = require("./routes/admin");
 const passport = require("passport");
-const session = require("express-session");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
@@ -22,43 +22,33 @@ const app = express();
 // Enable CORS for Chrome extension
 app.use(
   cors({
-    origin: ["chrome-extension://*", "http://localhost:3000"],
+    origin: true,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
 app.use(cookieParser());
-
-// Session configuration
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false,
-      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    },
-  })
-);
 
 // Initialize passport
 app.use(passport.initialize());
-app.use(passport.session());
 
 // Routes
 app.use("/summarize", summaryRouter);
 app.use("/summaries", summaryRouter);
 app.use("/chat", chatRouter);
 app.use("/auth", authRouter);
+app.use("/admin", adminRouter);
 app.use("/payment", paymentRouter);
 
-// User status endpoint
-app.get("/user", (req, res) => {
-  if (req.isAuthenticated()) {
+// User status endpoint (JWT Authentication)
+app.get(
+  "/user",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
     return res.json({
       isAuthenticated: true,
       user: {
@@ -67,38 +57,41 @@ app.get("/user", (req, res) => {
         email: req.user.email,
         picture: req.user.picture,
         subscription: req.user.subscription,
+        role: req.user.role,
       },
     });
   }
-  return res.json({ isAuthenticated: false });
-});
+);
 
-// Profile endpoint
-app.get("/profile", (req, res) => {
-  if (req.isAuthenticated()) {
+// Profile endpoint (JWT Authentication)
+app.get(
+  "/profile",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
     return res.json({
       id: req.user._id,
       name: req.user.name,
       email: req.user.email,
       picture: req.user.picture,
       subscription: req.user.subscription,
+      role: req.user.role,
       createdAt: req.user.createdAt,
     });
   }
-  return res.status(401).json({ error: "Not authenticated" });
-});
+);
 
-
+// Stripe Payment Success Page (For Extension)
 app.get("/payment/success", (req, res) => {
   const sessionId = req.query.session_id;
+  const token = req.query.token;
   res.send(`
     <html>
       <body>
         <script>
-          // Notify the extension that payment was successful
           window.opener.postMessage({
             type: 'payment_success',
-            sessionId: '${sessionId}'
+            sessionId: '${sessionId}',
+            token: '${token}'
           }, '*');
           window.close();
         </script>
@@ -107,15 +100,16 @@ app.get("/payment/success", (req, res) => {
   `);
 });
 
-// Cancel route
+// Stripe Payment Cancel Page (For Extension)
 app.get("/payment/cancel", (req, res) => {
+  const token = req.query.token;
   res.send(`
     <html>
       <body>
         <script>
-          // Notify the extension that payment was canceled
           window.opener.postMessage({
-            type: 'payment_cancel'
+            type: 'payment_cancel',
+            token: '${token}'
           }, '*');
           window.close();
         </script>
@@ -123,6 +117,5 @@ app.get("/payment/cancel", (req, res) => {
     </html>
   `);
 });
-
 
 app.listen(port, () => console.log(`Server started on PORT ${port}`));

@@ -1,8 +1,40 @@
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const LocalStrategy = require("passport-local").Strategy;
+const JwtStrategy = require("passport-jwt").Strategy;
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+
+// JWT cookie extractor
+const cookieExtractor = (req) => {
+  let token = null;
+  if (req && req.cookies) {
+    token = req.cookies["jwt"];
+  }
+  return token;
+};
+
+// JWT Strategy
+passport.use(
+  new JwtStrategy(
+    {
+      jwtFromRequest: cookieExtractor,
+      secretOrKey: process.env.JWT_SECRET,
+    },
+    async (payload, done) => {
+      try {
+        console.log(payload);
+        const user = await User.findById(payload.id);
+        if (user) {
+          return done(null, user);
+        }
+        return done(null, false);
+      } catch (error) {
+        return done(error, false);
+      }
+    }
+  )
+);
 
 passport.use(
   new GoogleStrategy(
@@ -62,7 +94,7 @@ passport.use(
         if (!isMatch) {
           return done(null, false, { message: "Incorrect password" });
         }
-        
+
         return done(null, user);
       } catch (err) {
         return done(err);
@@ -70,16 +102,3 @@ passport.use(
     }
   )
 );
-
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await User.findById(id);
-    done(null, user);
-  } catch (err) {
-    done(err, null);
-  }
-});

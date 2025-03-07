@@ -1,52 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>More Options</title>
-  <link rel="stylesheet" href="styles/options.css">
-</head>
-<body>
-  <div class="container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <h2>Options</h2>
-      <ul>
-        <li><a href="#" id="past-summaries" class="active">Past Summaries</a></li>
-        <li><a href="#" id="tags">Tags</a></li>
-        <li><a href="#" id="profile">Profile</a></li>
-        <li><a href="#" id="payment">Payment</a></li>
-      </ul>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>More Options</title>
+    <link rel="stylesheet" href="styles/options.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <h2>Options</h2>
+        <ul>
+          <li>
+            <a href="#" id="past-summaries" class="active">Past Summaries</a>
+          </li>
+          <li><a href="#" id="tags">Tags</a></li>
+          <li><a href="#" id="profile">Profile</a></li>
+          <li><a href="#" id="payment">Payment</a></li>
+          <li>
+            <a href="#" id="admin-panel" class="admin-only hidden"
+              >Admin Panel</a
+            >
+          </li>
+        </ul>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <div id="past-summaries-content" class="content-section active">
+          <h3>Saved Summaries</h3>
+          <input
+            type="text"
+            id="search-bar"
+            placeholder="Search summaries or tags..."
+          />
+          <div id="past-summaries-list" class="summaries-list"></div>
+        </div>
+
+        <div id="tags-content" class="content-section hidden">
+          <h3>Tags</h3>
+          <div id="tags-list" class="tags-list"></div>
+        </div>
+
+        <div id="profile-content" class="content-section hidden">
+          <h3>Profile</h3>
+          <div id="user-info" class="user-info-container"></div>
+        </div>
+
+        <div id="payment-content" class="content-section hidden">
+          <h3>Subscription Plans</h3>
+          <div id="plans-container" class="plans-container"></div>
+
+          <h3>Payment History</h3>
+          <div id="payment-history" class="payment-history"></div>
+        </div>
+
+        <!-- Admin Panel Section -->
+        <div id="admin-content" class="content-section hidden">
+          <div class="admin-header">
+            <h3>User Management</h3>
+            <div class="admin-stats">
+              <div class="stat-box">
+                <span class="stat-label">Total Users</span>
+                <span id="total-users" class="stat-value">0</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">Free Users</span>
+                <span id="free-users" class="stat-value">0</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">Basic Users</span>
+                <span id="basic-users" class="stat-value">0</span>
+              </div>
+              <div class="stat-box">
+                <span class="stat-label">Premium Users</span>
+                <span id="premium-users" class="stat-value">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-filters">
+            <input
+              type="text"
+              id="user-search"
+              placeholder="Search users by name or email"
+            />
+            <select id="subscription-filter">
+              <option value="">All Subscriptions</option>
+              <option value="free">Free</option>
+              <option value="basic">Basic</option>
+              <option value="premium">Premium</option>
+            </select>
+            <select id="role-filter">
+              <option value="">All Roles</option>
+              <option value="user">Users</option>
+              <option value="admin">Admins</option>
+            </select>
+          </div>
+
+          <div id="users-table" class="users-table">
+            <!-- Users will be loaded here -->
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-      <div id="past-summaries-content" class="content-section active">
-        <h3>Past Summaries</h3>
-        <input type="text" id="search-bar" placeholder="Search summaries or tags...">
-        <div id="past-summaries-list" class="summaries-list"></div>
-      </div>
-
-      <div id="tags-content" class="content-section hidden">
-        <h3>Tags</h3>
-        <div id="tags-list" class="tags-list"></div>
-      </div>
-
-      <div id="profile-content" class="content-section hidden">
-        <h3>Profile</h3>
-        <div id="user-info" class="user-info-container"></div>
-      </div>
-
-      <div id="payment-content" class="content-section hidden">
-        <h3>Subscription Plans</h3>
-        <div id="plans-container" class="plans-container"></div>
-        
-        <h3>Payment History</h3>
-        <div id="payment-history" class="payment-history"></div>
-      </div>
-    </div>
-  </div>
-
-  <script src="scripts/options.js"></script>
-</body>
+    <script src="scripts/options.js"></script>
+  </body>
 </html>
