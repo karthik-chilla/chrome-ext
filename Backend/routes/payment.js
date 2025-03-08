@@ -144,4 +144,17 @@ router.get(
   }
 );
 
+router.get("/payment/history", async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    res.json({
+      paymentHistory: user.paymentHistory || []
+    });
+  } catch (error) {
+    console.error("Failed to fetch payment history:", error);
+    res.status(500).json({ error: "Failed to fetch payment history" });
+  }
+});
+
+
 module.exports = router;

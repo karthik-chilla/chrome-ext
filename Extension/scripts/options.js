@@ -1,5 +1,7 @@
+
 document.addEventListener("DOMContentLoaded", () => {
   const pastSummariesLink = document.getElementById("past-summaries");
+  const fileSummariesLink = document.getElementById("file-summaries");
   const tagsLink = document.getElementById("tags");
   const profileLink = document.getElementById("profile");
   const paymentLink = document.getElementById("payment");
@@ -8,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const pastSummariesContent = document.getElementById(
     "past-summaries-content"
   );
+  const fileSummariesContent = document.getElementById("file-summaries-content");
   const tagsContent = document.getElementById("tags-content");
   const profileContent = document.getElementById("profile-content");
   const paymentContent = document.getElementById("payment-content");
@@ -23,6 +26,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const userInfo = document.getElementById("user-info");
   const plansContainer = document.getElementById("plans-container");
   const paymentHistory = document.getElementById("payment-history");
+
+  const fileUpload = document.getElementById("file-upload");
+  const uploadButton = document.getElementById("upload-button");
+  const fileSummaryLoader = document.getElementById("file-summary-loader");
+  const fileSummaryContent = document.getElementById("file-summary-content");
+  const downloadContainer = document.querySelector(".download-container");
+  const downloadButton = document.getElementById("download-file-summary");
+  const fileSummaryType = document.getElementById("fileSummaryType");
+
+  setActiveSection(profileLink, profileContent);
+  fetchProfile();
+
+  let currentSummaryContent = null;
+  let currentSummaryType = "short";
 
   let currentUserRole = null;
 
@@ -80,6 +97,17 @@ document.addEventListener("DOMContentLoaded", () => {
       userModal.classList.add("hidden");
     }
   });
+
+  fileSummariesLink.addEventListener("click", () => {
+    checkSubscriptionForFileSummaries();
+  });
+
+  fileSummaryType.addEventListener("change", () => {
+    currentSummaryType = fileSummaryType.checked ? "long" : "short";
+  });
+
+  uploadButton.addEventListener("click", handleFileUpload);
+  downloadButton.addEventListener("click", handleDownload);
 
   pastSummariesLink.addEventListener("click", () => {
     setActiveSection(pastSummariesLink, pastSummariesContent);
@@ -146,6 +174,118 @@ document.addEventListener("DOMContentLoaded", () => {
     content.classList.remove("hidden");
     content.classList.add("active");
   }
+
+
+  async function checkSubscriptionForFileSummaries() {
+    try {
+      const response = await fetch("http://localhost:3000/profile", {
+        credentials: "include"
+      });
+      const profile = await response.json();
+
+      if (profile.subscription === 'free') {
+        setActiveSection(paymentLink, paymentContent);
+        fetchPlans();
+        fetchPaymentHistory();
+        alert("Please upgrade to Basic or Premium plan to use file summaries.");
+      } else {
+        setActiveSection(fileSummariesLink, fileSummariesContent);
+      }
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+      showError("Failed to check subscription status");
+    }
+  }
+
+
+  async function handleFileUpload() {
+    const file = fileUpload.files[0];
+    if (!file) {
+      alert("Please select a file first");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', currentSummaryType);
+
+    fileSummaryLoader.style.display = "block";
+    fileSummaryContent.textContent = "";
+    downloadContainer.classList.add("hidden");
+
+    try {
+      const response = await fetch("http://localhost:3000/summaries/file-summary", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        currentSummaryContent = data.response;
+        fileSummaryContent.textContent = data.response;
+        downloadContainer.classList.remove("hidden");
+      } else if (data.redirectTo === 'payment') {
+        setActiveSection(paymentLink, paymentContent);
+        fetchPlans();
+        alert("Please upgrade to Premium plan to use this feature.");
+      } else {
+        throw new Error(data.error || "Failed to generate summary");
+      }
+    } catch (error) {
+      console.error("File upload error:", error);
+      fileSummaryContent.textContent = "Error generating summary. Please try again.";
+    } finally {
+      fileSummaryLoader.style.display = "none";
+    }
+  }
+
+  async function handleDownload() {
+    if (!currentSummaryContent) {
+      alert("No summary to download");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:3000/summaries/download-file-summary", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          content: currentSummaryContent,
+          type: currentSummaryType
+        }),
+        credentials: "include"
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${currentSummaryType}-file-summary.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        const data = await response.json();
+        if (data.redirectTo === 'payment') {
+          setActiveSection(paymentLink, paymentContent);
+          fetchPlans();
+          alert("Please upgrade to Premium plan to download summaries.");
+        } else {
+          throw new Error(data.error || "Failed to download summary");
+        }
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("Failed to download summary. Please try again.");
+    }
+  }
+  
 
   async function fetchPaymentHistory() {
     try {
@@ -453,21 +593,19 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchPastSummaries(query = "") {
     try {
       const endpoint = query
-        ? `http://localhost:3000/summaries/search?query=${encodeURIComponent(
-            query
-          )}`
+        ? `http://localhost:3000/summaries/search?query=${encodeURIComponent(query)}`
         : "http://localhost:3000/summaries/summaries";
-
+  
       const response = await fetch(endpoint, {
         credentials: "include",
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch summaries");
       }
-
+  
       const summaries = await response.json();
-
+  
       if (summaries.length === 0) {
         pastSummariesList.innerHTML = `
           <div class="empty-state">
@@ -475,57 +613,53 @@ document.addEventListener("DOMContentLoaded", () => {
             <button id="generate-new">Generate a new summary</button>
           </div>
         `;
-
-        document
-          .getElementById("generate-new")
-          ?.addEventListener("click", () => {
-            chrome.runtime.sendMessage({ action: "openPopup" });
-          });
-
+  
+        document.getElementById("generate-new")?.addEventListener("click", () => {
+          chrome.runtime.sendMessage({ action: "openPopup" });
+        });
+  
         return;
       }
-
+  
       pastSummariesList.innerHTML = summaries
-        .map(
-          (summary) => `
-        <div class="summary-card">
-          <div class="summary-title">${summary.tags[0] || "Untitled"}</div>
-          <div class="summary-domain">${
-            summary.domain || new URL(summary.url).hostname
-          }</div>
-          <div class="summary-text">${
-            summary.shortSummary || summary.longSummary
-          }</div>
-          
-          <div class="summary-tags">
-            ${summary.tags
-              .map((tag) => `<span class="tag" data-tag="${tag}">${tag}</span>`)
-              .join("")}
-          </div>
-          
-          <div class="summary-actions">
-            <a href="${
-              summary.url
-            }" target="_blank" class="action-button view-button">View Article</a>
-            <button class="action-button download-button" data-url="${
-              summary.url
-            }" data-type="short">Download Short</button>
-            <button class="action-button download-button" data-url="${
-              summary.url
-            }" data-type="long">Download Long</button>
-          </div>
-        </div>
-      `
-        )
+        .map((summary) => {
+          let domain = "Unknown Domain";
+          try {
+            // Validate the URL before constructing it
+            if (summary.url && isValidUrl(summary.url)) {
+              domain = new URL(summary.url).hostname;
+            }
+          } catch (error) {
+            console.error("Invalid URL:", summary.url, error);
+          }
+  
+          return `
+            <div class="summary-card">
+              <div class="summary-title">${summary.tags[0] || "Untitled"}</div>
+              <div class="summary-domain">${summary.domain || domain}</div>
+              <div class="summary-text">${summary.shortSummary || summary.longSummary}</div>
+              <div class="summary-tags">
+                ${summary.tags
+                  .map((tag) => `<span class="tag" data-tag="${tag}">${tag}</span>`)
+                  .join("")}
+              </div>
+              <div class="summary-actions">
+                <a href="${summary.url}" target="_blank" class="action-button view-button">View Article</a>
+                <button class="action-button download-button" data-url="${summary.url}" data-type="short">Download Short</button>
+                <button class="action-button download-button" data-url="${summary.url}" data-type="long">Download Long</button>
+              </div>
+            </div>
+          `;
+        })
         .join("");
-
+  
       document.querySelectorAll(".tag").forEach((tag) => {
         tag.addEventListener("click", () => {
           searchBar.value = tag.dataset.tag;
           fetchPastSummaries(tag.dataset.tag);
         });
       });
-
+  
       document.querySelectorAll(".download-button").forEach((button) => {
         button.addEventListener("click", () => {
           downloadSummary(button.dataset.url, button.dataset.type);
@@ -540,7 +674,16 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
     }
   }
-
+  
+  // Helper function to validate URLs
+  function isValidUrl(url) {
+    try {
+      new URL(url);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
   async function fetchTags() {
     try {
       const response = await fetch("http://localhost:3000/summaries/tags", {
@@ -797,4 +940,20 @@ document.addEventListener("DOMContentLoaded", () => {
       errorDiv.remove();
     }, 5000);
   }
+
+
+  document.getElementById("file-upload").click();
+  paymentLink.addEventListener("click", () => {
+    setActiveSection(paymentLink, paymentContent);
+    fetchPlans();
+    fetchPaymentHistory();
+  });
+
+  document.addEventListener("DOMContentLoaded",function(){
+    fetchPaymentHistory();
+
+  })
+
+
 });
+

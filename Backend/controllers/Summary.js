@@ -1,4 +1,6 @@
-const Summary = require("../models/Summary");
+
+
+const {Summary, Tag} = require("../models/Summary");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require("axios");
 
@@ -10,13 +12,43 @@ function truncateText(text, maxTokens = 30000) {
   return text.split(" ").slice(0, maxTokens).join(" ");
 }
 
+function isValidUrl(url) {
+  try {
+    new URL(url); // Throws an error if the URL is invalid
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 async function summarise(req, res) {
   try {
+
+    
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
     const { text, type, url, domain, title, save } = req.body;
+
+    const isFileSummary = url.startsWith("file-");
+    if (!isFileSummary && !isValidUrl(url)) {
+      console.error("Invalid URL:", url);
+      return res.status(400).json({ error: "Invalid URL" });
+    }
+    if (!isValidUrl(url)) {
+      return res.status(400).json({ error: "Invalid URL" });
+    }
+
     const length = type === "short" ? "1-2 sentences" : "2-3 paragraphs";
     const truncatedText = truncateText(text);
 
-    let existingSummary = await Summary.findOne({ url });
+    const domainstring = typeof domain === 'string' ? domain: String(domain);
+    const titlestring = typeof title === 'string' ? title : String(title);
+
+    let existingSummary = await Summary.findOne({ url, user: req.user._id })
+                                     .populate('tags');
+                                     
     if (save) {
       if (existingSummary) {
         if (type === "short" && existingSummary.shortSummary) {
@@ -36,23 +68,34 @@ async function summarise(req, res) {
       const result = await model.generateContent(prompt);
       const generatedSummary = await result.response.text();
 
-      let tags = [];
+      let tagIds = [];
       try {
-        tags = await generateTags(text);
+        const generatedTags = await generateTags(text);
+        // Create or find existing tags and get their IDs
+        const tagPromises = generatedTags.map(async tagName => {
+          let tag = await Tag.findOne({ name: tagName, userId: req.user._id });
+          if (!tag) {
+            tag = new Tag({ name: tagName, userId: req.user._id });
+            await tag.save();
+          }
+          return tag._id;
+        });
+        tagIds = await Promise.all(tagPromises);
       } catch (error) {
         console.error("Error generating tags:", error);
       }
 
       if (!existingSummary) {
         existingSummary = new Summary({
+          user: req.user._id,
           url,
-          domain,
-          title,
+          domain: domainstring,
+          title : titlestring,
           text,
           shortSummary: type === "short" ? generatedSummary : "",
           longSummary: type === "long" ? generatedSummary : "",
           lastAccessed: new Date(),
-          tags: tags,
+          tags: tagIds,
         });
       } else {
         if (type === "short") {
@@ -61,17 +104,17 @@ async function summarise(req, res) {
           existingSummary.longSummary = generatedSummary;
         }
         existingSummary.lastAccessed = new Date();
-        if (tags.length > 0) {
-          existingSummary.tags = tags;
+        if (tagIds.length > 0) {
+          existingSummary.tags = tagIds;
         }
       }
-
       await existingSummary.save();
 
-      const totalSummaries = await Summary.countDocuments();
+      const totalSummaries = await Summary.countDocuments({user:req.user._id});
       if (totalSummaries > 100) {
-        const leastUsedRecord = await Summary.findOne().sort({
-          lastAccessed: 1,
+        const leastUsedRecord = await Summary.findOne({user:req.user._id})
+        .sort({
+          lastAccessed: 1
         });
         if (leastUsedRecord) {
           await Summary.findByIdAndDelete(leastUsedRecord._id);
@@ -80,7 +123,7 @@ async function summarise(req, res) {
 
       res.json({ response: generatedSummary });
     } else {
-      console.log("🔍 Fetching summary without saving");
+      console.log(" Fetching summary without saving");
 
       const prompt = `Summarize the following content in ${length}:\n\n${text}`;
       const result = await model.generateContent(prompt);

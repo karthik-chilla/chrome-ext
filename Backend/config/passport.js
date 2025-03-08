@@ -4,7 +4,7 @@ const LocalStrategy = require("passport-local").Strategy;
 const JwtStrategy = require("passport-jwt").Strategy;
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-
+ 
 // JWT cookie extractor
 const cookieExtractor = (req) => {
   let token = null;
@@ -13,7 +13,7 @@ const cookieExtractor = (req) => {
   }
   return token;
 };
-
+ 
 // JWT Strategy
 passport.use(
   new JwtStrategy(
@@ -23,7 +23,6 @@ passport.use(
     },
     async (payload, done) => {
       try {
-        console.log(payload);
         const user = await User.findById(payload.id);
         if (user) {
           return done(null, user);
@@ -35,19 +34,22 @@ passport.use(
     }
   )
 );
-
+ 
+// Google Strategy
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/google/callback",
+      callbackURL: "/auth/google/callback",
+      proxy: true,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
         let user = await User.findOne({ email: profile.emails[0].value });
-
+ 
         if (user) {
+          // Update Google ID and picture if not set
           if (!user.googleId) {
             user.googleId = profile.id;
             user.picture = profile.photos[0].value;
@@ -55,46 +57,54 @@ passport.use(
           }
           return done(null, user);
         }
-
+ 
+        // Create new user if doesn't exist
         user = new User({
           googleId: profile.id,
           name: profile.displayName,
           email: profile.emails[0].value,
           picture: profile.photos[0].value,
+          loginHistory: [
+            {
+              action: "signup",
+              ipAddress: "Google OAuth",
+            },
+          ],
         });
         await user.save();
-
+ 
         return done(null, user);
       } catch (err) {
+        console.error("Google Auth Error:", err);
         return done(err, null);
       }
     }
   )
 );
-
+ 
 passport.use(
   new LocalStrategy(
     { usernameField: "email" },
     async (email, password, done) => {
       try {
         const user = await User.findOne({ email });
-
+ 
         if (!user) {
           return done(null, false, { message: "User not found" });
         }
-
+ 
         if (!user.password) {
           return done(null, false, {
             message:
               "This email is linked to Google. Please log in with Google.",
           });
         }
-
+ 
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
           return done(null, false, { message: "Incorrect password" });
         }
-
+ 
         return done(null, user);
       } catch (err) {
         return done(err);
@@ -102,3 +112,18 @@ passport.use(
     }
   )
 );
+ 
+// Required for maintaining login session
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+ 
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+});
+ 
