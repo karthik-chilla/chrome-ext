@@ -12,11 +12,13 @@
       <div class="sidebar">
         <h2>Options</h2>
         <ul>
+          <li><a href="#" id="profile" class="active">Profile</a></li>
           <li>
-            <a href="#" id="past-summaries" class="active">Past Summaries</a>
+            <a href="#" id="past-summaries" >Past Summaries</a>
           </li>
+          <li><a href="#" id="file-summaries">File Summaries</a></li>
           <li><a href="#" id="tags">Tags</a></li>
-          <li><a href="#" id="profile">Profile</a></li>
+         
           <li><a href="#" id="payment">Payment</a></li>
           <li>
             <a href="#" id="admin-panel" class="admin-only hidden"
@@ -28,7 +30,7 @@
 
       <!-- Main Content -->
       <div class="main-content">
-        <div id="past-summaries-content" class="content-section active">
+        <div id="past-summaries-content" class="content-section hidden">
           <h3>Saved Summaries</h3>
           <input
             type="text"
@@ -38,12 +40,36 @@
           <div id="past-summaries-list" class="summaries-list"></div>
         </div>
 
+        <div id="file-summaries-content" class="content-section hidden">
+          <h3>File Summaries</h3>
+          <div class="file-upload-container">
+            <div class="toggle-container">
+              <label for="fileSummaryType">Summary Type:</label>
+              <div class="toggle-switch">
+                <span>Short</span>
+                <input type="checkbox" id="fileSummaryType" />
+                <span>Long</span>
+              </div>
+            </div>
+            <input type="file" id="file-upload" accept=".txt,.doc,.docx,.pdf" />
+            <button id="upload-button">Upload & Summarize</button>
+          </div>
+          <div class="loader" id="file-summary-loader">
+            <div class="spinner"></div>
+            <p>Generating summary...</p>
+          </div>
+          <div id="file-summary-content" class="summary-content"></div>
+          <div class="download-container hidden">
+            <button id="download-file-summary">Download Summary</button>
+          </div>
+        </div>
+
         <div id="tags-content" class="content-section hidden">
           <h3>Tags</h3>
           <div id="tags-list" class="tags-list"></div>
         </div>
 
-        <div id="profile-content" class="content-section hidden">
+        <div id="profile-content" class="content-section active">
           <h3>Profile</h3>
           <div id="user-info" class="user-info-container"></div>
         </div>
