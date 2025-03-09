@@ -5,34 +5,43 @@ const passport = require("passport");
 const User = require("../models/User");
 
 // Get subscription plans
-router.get("/plans", (req, res) => {
-  const plans = [
-    {
-      id: "basic",
-      name: "Basic Plan",
-      price: 4.99,
-      features: [
-        "Unlimited summaries",
-        "Save up to 50 summaries",
-        "Basic tag generation",
-      ],
-    },
-    {
-      id: "premium",
-      name: "Premium Plan",
-      price: 9.99,
-      features: [
-        "Unlimited summaries",
-        "Save unlimited summaries",
-        "Advanced tag generation",
-        "Priority support",
-        "Export to PDF/Word",
-      ],
-    },
-  ];
+router.get(
+  "/plans",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    // Return empty array for super_admin
+    if (req.user && req.user.role === "super_admin") {
+      return res.json([]);
+    }
 
-  res.json(plans);
-});
+    const plans = [
+      {
+        id: "basic",
+        name: "Basic Plan",
+        price: 4.99,
+        features: [
+          "Unlimited summaries",
+          "Save up to 50 summaries",
+          "Basic tag generation",
+        ],
+      },
+      {
+        id: "premium",
+        name: "Premium Plan",
+        price: 9.99,
+        features: [
+          "Unlimited summaries",
+          "Save unlimited summaries",
+          "Advanced tag generation",
+          "Priority support",
+          "Export to PDF/Word",
+        ],
+      },
+    ];
+
+    res.json(plans);
+  }
+);
 
 // Create checkout session (with JWT authentication)
 router.post(
@@ -40,6 +49,13 @@ router.post(
   passport.authenticate("jwt", { session: false }),
   async (req, res) => {
     try {
+      // Prevent super_admin from creating checkout sessions
+      if (req.user.role === "super_admin") {
+        return res
+          .status(403)
+          .json({ error: "Super admins already have premium access" });
+      }
+
       const { planId } = req.body;
 
       // Get plan details
@@ -103,18 +119,28 @@ router.post(
       const session = await stripe.checkout.sessions.retrieve(session_id);
 
       if (session.payment_status === "paid") {
-        // Update user subscription and payment history
-        await User.findByIdAndUpdate(session.client_reference_id, {
-          subscription: session.metadata.planId,
-          $push: {
-            paymentHistory: {
-              amount: session.amount_total / 100, // Convert cents to dollars
-              description: `Subscription to ${session.metadata.planId} plan`,
-              status: "completed",
-              date: new Date(),
+        // Check if payment was already processed
+        const user = await User.findById(session.client_reference_id);
+        const paymentExists = user.paymentHistory.some(
+          (payment) =>
+            payment.description ===
+            `Subscription to ${session.metadata.planId} plan`
+        );
+
+        if (!paymentExists) {
+          // Update user subscription and payment history
+          await User.findByIdAndUpdate(session.client_reference_id, {
+            subscription: session.metadata.planId,
+            $push: {
+              paymentHistory: {
+                amount: session.amount_total / 100, // Convert cents to dollars
+                description: `Subscription to ${session.metadata.planId} plan`,
+                status: "completed",
+                date: new Date(),
+              },
             },
-          },
-        });
+          });
+        }
 
         res.json({ success: true });
       } else {
@@ -148,13 +174,12 @@ router.get("/payment/history", async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     res.json({
-      paymentHistory: user.paymentHistory || []
+      paymentHistory: user.paymentHistory || [],
     });
   } catch (error) {
     console.error("Failed to fetch payment history:", error);
     res.status(500).json({ error: "Failed to fetch payment history" });
   }
 });
-
 
 module.exports = router;

@@ -29,18 +29,67 @@ document.addEventListener("DOMContentLoaded", function () {
     dropdownContent.style.display = "none";
   });
 
+  // Check user subscription before enabling chatbot
+  chatbotModeBtn.addEventListener("click", async function () {
+    try {
+      const response = await fetch("http://localhost:3000/profile", {
+        credentials: "include",
+      });
+      const profile = await response.json();
+
+      if (
+        profile.subscription === "premium" ||
+        profile.role === "super_admin"
+      ) {
+        chatbotModeBtn.classList.add("active");
+        summaryModeBtn.classList.remove("active");
+        chatbotMode.classList.remove("hidden");
+        summaryMode.classList.add("hidden");
+      } else {
+        // Show premium required message
+        const premiumMessage = document.createElement("div");
+        premiumMessage.className = "premium-message";
+        premiumMessage.textContent =
+          "⭐ Premium subscription required to use the chatbot feature";
+
+        // Create upgrade button
+        const upgradeButton = document.createElement("button");
+        upgradeButton.textContent = "Upgrade to Premium";
+        upgradeButton.className = "upgrade-button";
+        premiumMessage.appendChild(upgradeButton);
+
+        // Replace summary content with premium message
+        summary.innerHTML = "";
+        summary.appendChild(premiumMessage);
+
+        // Handle upgrade button click - Updated to go directly to payment section
+        upgradeButton.addEventListener("click", function () {
+          chrome.tabs.create({
+            url: chrome.runtime.getURL("options.html#payment"),
+            active: true,
+          });
+        });
+
+        // Keep summary mode active
+        summaryModeBtn.classList.add("active");
+        chatbotModeBtn.classList.remove("active");
+        summaryMode.classList.remove("hidden");
+        chatbotMode.classList.add("hidden");
+      }
+    } catch (error) {
+      console.error("Error checking subscription:", error);
+      summary.textContent =
+        "Error checking subscription status. Please try again.";
+    }
+  });
+
   summaryModeBtn.addEventListener("click", function () {
     summaryModeBtn.classList.add("active");
     chatbotModeBtn.classList.remove("active");
     summaryMode.classList.remove("hidden");
     chatbotMode.classList.add("hidden");
-  });
-
-  chatbotModeBtn.addEventListener("click", function () {
-    chatbotModeBtn.classList.add("active");
-    summaryModeBtn.classList.remove("active");
-    chatbotMode.classList.remove("hidden");
-    summaryMode.classList.add("hidden");
+    // Clear any premium messages
+    summary.textContent = "Summary will be generated here.";
   });
 
   // Check if user is authenticated before allowing summary generation
