@@ -909,11 +909,22 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       );
 
+      if (response.status === 404) {
+        showGenerateModal(type, url);
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("Failed to download summary");
       }
 
       const content = await response.text();
+
+      if (!content.trim()) {
+        showGenerateModal(type, url);
+        return;
+      }
+
       const blob = new Blob([content], { type: "text/plain" });
       const downloadUrl = URL.createObjectURL(blob);
 
@@ -929,6 +940,89 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Failed to download summary. Please try again.");
     }
   }
+
+  function showGenerateModal(type, url) {
+    // Create modal container
+    const modalContainer = document.createElement("div");
+    modalContainer.className = "modal";
+    modalContainer.style.display = "flex";
+
+    // Create modal content
+    const modalContent = document.createElement("div");
+    modalContent.className = "modal-content";
+    modalContent.style.maxWidth = "400px";
+    modalContent.style.margin = "auto";
+    modalContent.style.padding = "20px";
+    modalContent.style.backgroundColor = "white";
+    modalContent.style.borderRadius = "8px";
+    modalContent.style.textAlign = "center";
+
+    modalContent.innerHTML = `
+      <h3 style="margin-bottom: 15px">Generate Summary</h3>
+      <p style="margin-bottom: 20px">The ${type} summary hasn't been generated yet. Would you like to generate it now?</p>
+      <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="generate-summary-btn" class="action-button" style="background-color: #007bff;">Generate</button>
+        <button id="cancel-generate-btn" class="action-button" style="background-color: #6c757d;">Cancel</button>
+      </div>
+    `;
+
+    modalContainer.appendChild(modalContent);
+    document.body.appendChild(modalContainer);
+
+    // Handle generate button click
+    document.getElementById("generate-summary-btn").addEventListener("click", async () => {
+      try {
+        modalContent.innerHTML = `
+          <div class="loader" style="display: block;">
+            <div class="spinner"></div>
+            <p>Generating summary...</p>
+          </div>
+        `;
+
+        const response = await fetch(`http://localhost:3000/summarize/generate?url=${encodeURIComponent(url)}&type=${type}`, {
+          method: 'GET',
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to generate summary: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.response) {
+          // After successful generation, try downloading again
+          document.body.removeChild(modalContainer);
+          downloadSummary(url, type);
+        } else {
+          throw new Error("Generated summary is empty");
+        }
+      } catch (error) {
+        console.error("Error generating summary:", error);
+        modalContent.innerHTML = `
+          <h3 style="margin-bottom: 15px">Error</h3>
+          <p style="margin-bottom: 20px">Failed to generate summary. Please try again.</p>
+          <button id="close-error-btn" class="action-button" style="background-color: #6c757d;">Close</button>
+        `;
+        document.getElementById("close-error-btn").addEventListener("click", () => {
+          document.body.removeChild(modalContainer);
+        });
+      }
+    });
+
+    // Handle cancel button click
+    document.getElementById("cancel-generate-btn").addEventListener("click", () => {
+      document.body.removeChild(modalContainer);
+    });
+
+    // Close modal when clicking outside
+    modalContainer.addEventListener("click", (e) => {
+      if (e.target === modalContainer) {
+        document.body.removeChild(modalContainer);
+      }
+    });
+  }
+
 
   function showError(message) {
     const errorDiv = document.createElement("div");

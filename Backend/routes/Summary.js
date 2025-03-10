@@ -15,6 +15,115 @@ router.use(passport.authenticate("jwt", { session: false }));
 
 router.post("/", summarise);
 
+router.post("/summaries/generate", async (req, res) => {
+  try {
+    const { url, type, aiProvider, save } = req.body;
+
+    // Call the summarise function with the selected AI provider
+    const summary = await summarise({
+      body: { url, type, save },
+      user: req.user, // Ensure authentication is handled
+      aiProvider,
+    });
+
+    res.json({ response: summary });
+  } catch (error) {
+    console.error("Error generating summary:", error);
+    res.status(500).json({ error: "Failed to generate summary" });
+  }
+});
+
+router.get("/generate", async (req, res) => {
+  try {
+    const { url, type } = req.query;
+
+    if (!url || !type) {
+      return res.status(400).json({ error: "Missing url or type parameter" });
+    }
+
+    // Get the existing summary
+    const existingSummary = await Summary.findOne({ 
+      url, 
+      user: req.user._id 
+    });
+
+    if (!existingSummary) {
+      return res.status(404).json({ error: "Summary not found" });
+    }
+
+    // Get the page content from the existing summary
+    const text = existingSummary.text;
+    if (!text) {
+      return res.status(404).json({ error: "Original text not found" });
+    }
+
+    // Create request object for summarise controller
+    const mockReq = {
+      body: {
+        text,
+        url,
+        type,
+        domain: existingSummary.domain,
+        title: existingSummary.title,
+        save: true
+      },
+      user: req.user
+    };
+
+    // Create response object
+    const mockRes = {
+      json: (data) => res.json(data),
+      status: (code) => ({
+        json: (data) => res.status(code).json(data)
+      })
+    };
+
+    // Generate the summary
+    await summarise(mockReq, mockRes);
+  } catch (error) {
+    console.error("Generate summary error:", error);
+    res.status(500).json({ error: "Failed to generate summary" });
+  }
+});
+
+
+router.post("/file-summary", upload.single('file'), async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    if (req.user.subscription === 'free') {
+      return res.status(403).json({ error: "Upgrade to Premium for file summaries", redirectTo: 'payment' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    const text = req.file.buffer.toString('utf-8');
+    const type = req.body.type || 'short';
+
+    // Create a mock request object with the necessary properties
+    const mockReq = {
+      user: req.user,
+      body: {
+        text,
+        type,
+        save: false,
+        url: `file://${req.file.originalname}`, // Generate a unique URL for file summaries
+        domain: 'File Summary',
+        title: req.file.originalname
+      }
+    };
+
+    await summarise(mockReq, res);
+  } catch (error) {
+    console.error("File summary error:", error);
+    res.status(500).json({ error: "Failed to process file summary" });
+  }
+});
+
 
 router.post("/file-summary", upload.single('file'), async (req, res) => {
   try {
