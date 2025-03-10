@@ -4,10 +4,23 @@ const passport = require("passport");
 
 const router = express.Router();
 
-// Protect chat route with JWT authentication
+// Middleware to check premium subscription
+const checkPremiumSubscription = (req, res, next) => {
+  if (req.user.subscription === "premium" || req.user.role === "super_admin") {
+    next();
+  } else {
+    res.status(403).json({
+      error: "Premium subscription required",
+      redirectTo: "payment",
+    });
+  }
+};
+
+// Protect chat route with JWT authentication and premium subscription check
 router.post(
   "/",
   passport.authenticate("jwt", { session: false }),
+  checkPremiumSubscription,
   chatWithPage
 );
 

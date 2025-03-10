@@ -64,13 +64,21 @@ router.post("/signup", async (req, res) => {
     const userCount = await User.countDocuments();
     const role = userCount === 0 ? "super_admin" : "user";
 
+    // Set subscription to premium for super_admin
+    const subscription = role === "super_admin" ? "premium" : "free";
+
+    const now = new Date();
+
     user = new User({
       name,
       email,
       password: hashedPassword,
       role,
+      subscription,
+      lastLogin: now,
       loginHistory: [
         {
+          timestamp: now,
           action: "signup",
           ipAddress: req.ip,
         },
@@ -90,6 +98,7 @@ router.post("/signup", async (req, res) => {
         email: user.email,
         picture: user.picture,
         role: user.role,
+        subscription: user.subscription,
       },
     });
   } catch (err) {
@@ -111,11 +120,19 @@ router.post("/login", async (req, res, next) => {
       }
 
       // Update last login and add to login history
-      user.lastLogin = new Date();
+      const now = new Date();
+      user.lastLogin = now;
       user.loginHistory.push({
+        timestamp: now,
         action: "login",
         ipAddress: req.ip,
       });
+
+      // Ensure super_admin always has premium subscription
+      if (user.role === "super_admin") {
+        user.subscription = "premium";
+      }
+
       await user.save();
 
       const token = generateToken(user);
@@ -129,6 +146,7 @@ router.post("/login", async (req, res, next) => {
           email: user.email,
           picture: user.picture,
           role: user.role,
+          subscription: user.subscription,
         },
       });
     })(req, res, next);
@@ -174,6 +192,7 @@ router.get(
         email: req.user.email,
         picture: req.user.picture,
         role: req.user.role,
+        subscription: req.user.subscription,
       },
     });
   }

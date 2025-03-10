@@ -26,6 +26,33 @@ h3 {
   color: #444;
 }
 
+/* Premium Message Styles */
+.premium-message {
+  background: #fff3cd;
+  border: 1px solid #ffeeba;
+  color: #856404;
+  padding: 15px;
+  border-radius: 6px;
+  margin: 10px 0;
+  text-align: center;
+}
+
+.upgrade-button {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  margin-top: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.upgrade-button:hover {
+  background: #218838;
+}
+
 /* Auth Forms */
 .auth-form {
   display: flex;

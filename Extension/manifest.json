@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "QQ ummarizer",
+  "name": "Summarizer",
   "version": "1.0",
   "description": "Summarize web pages using AI with user authentication.",
   "permissions": [
