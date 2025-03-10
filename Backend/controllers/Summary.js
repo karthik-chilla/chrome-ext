@@ -145,6 +145,18 @@ async function summarise(req, res) {
       return res.status(400).json({ error: "Invalid URL" });
     }
 
+    let existingSummary = await Summary.findOne({ url, user: req.user._id }).populate("tags");
+
+    if (existingSummary) {
+      // Return the existing summary if it matches the requested type
+      if (type === "short" && existingSummary.shortSummary) {
+        return res.json({ response: existingSummary.shortSummary });
+      }
+      if (type === "long" && existingSummary.longSummary) {
+        return res.json({ response: existingSummary.longSummary });
+      }
+    }
+
     let generatedSummary;
     try {
       switch (aiProvider.toLowerCase()) {
@@ -177,8 +189,7 @@ async function summarise(req, res) {
     }
 
     if (save) {
-      let existingSummary = await Summary.findOne({ url, user: req.user._id }).populate("tags");
-
+      
       if (!existingSummary) {
         // Generate tags and get their IDs
         const tagIds = await generateTags(text, req.user._id);
@@ -220,6 +231,8 @@ async function summarise(req, res) {
     console.error("Error:", error);
     res.status(500).json({ error: "Error fetching summary" });
   }
+
+
 }
 
 module.exports = summarise;
