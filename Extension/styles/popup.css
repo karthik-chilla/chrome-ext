@@ -219,48 +219,106 @@ h3 {
 }
 
 /* Toggle Switch */
+#summary-mode {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-width: 300px;
+  font-family: Arial, sans-serif;
+}
+
 .toggle-container {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 15px 0;
+  justify-content: space-between;
+}
+
+.toggle-container label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
 }
 
 .toggle-switch {
   display: flex;
   align-items: center;
   gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
 }
 
 .toggle-switch input {
   appearance: none;
   width: 40px;
   height: 20px;
-  background: #ddd;
-  border-radius: 15px;
+  background: #ccc;
+  border-radius: 10px;
   position: relative;
   cursor: pointer;
+  transition: background 0.3s ease-in-out;
+}
+
+.toggle-switch input:checked {
+  background: #4caf50;
 }
 
 .toggle-switch input::before {
   content: "";
+  position: absolute;
   width: 18px;
   height: 18px;
   background: white;
-  position: absolute;
+  border-radius: 50%;
   top: 1px;
   left: 2px;
-  border-radius: 50%;
-  transition: 0.3s;
-}
-
-.toggle-switch input:checked {
-  background: #007bff;
+  transition: transform 0.3s ease-in-out;
 }
 
 .toggle-switch input:checked::before {
   transform: translateX(20px);
 }
+
+/* AI Provider Select Styles */
+.ai-provider-container {
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  margin: 10px 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.ai-provider-label {
+  display: block;
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+#ai-provider {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #333;
+  background-color: #f8f9fa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#ai-provider:hover {
+  border-color: #007bff;
+}
+
+#ai-provider:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
 
 /* Buttons */
 button {
