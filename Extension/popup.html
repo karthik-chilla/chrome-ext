@@ -1,3 +1,4 @@
+ 
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -39,7 +40,7 @@
             Don't have an account? <a href="#" id="show-signup">Sign up</a>
           </p>
         </div>
-
+ 
         <div id="signup-form" class="auth-form hidden">
           <h3>Sign Up</h3>
           <input
@@ -71,7 +72,7 @@
           </p>
         </div>
       </div>
-
+ 
       <!-- Main App Container -->
       <div id="app-container" class="hidden">
         <div class="header">
@@ -85,13 +86,13 @@
             </div>
           </div>
         </div>
-
+ 
         <!-- Mode Toggle -->
         <div class="mode-toggle">
           <button id="summary-mode-btn" class="mode-btn active">Summary</button>
           <button id="chatbot-mode-btn" class="mode-btn">Chatbot</button>
         </div>
-
+ 
         <!-- Summary Mode Content -->
         <div id="summary-mode" class="mode-content">
           <div class="toggle-container">
@@ -102,44 +103,31 @@
               <span>Long</span>
             </div>
           </div>
-
+ 
           <div class="ai-provider-container">
             <label for="ai-provider" class="ai-provider-label">
               Select AI Provider:
             </label>
             <select id="ai-provider">
-              <option value="gemini">Google Gemini</option>
-              <option value="deepseek">DeepSeek</option>
-              <option value="huggingface">Hugging Face</option>
+              <option value="gemini">Gemini</option>
+              <option value="gemma">Gemma</option>
+              <option value="llama">llama</option>
+              <option value="mixtral">Mixtral</option>
+              <option value="t5">Google T5</option>
             </select>
           </div>
-          <br />
-
-          <div class="ai-provider-container">
-            <label for="ai-provider" class="ai-provider-label">
-              Select AI Provider:
-            </label>
-            <select id="ai-provider" >
-                <option value="selectone">Select One</option>
-                <option value="gemini">Google Gemini</option>
-                <option value="deepseek">DeepSeek</option>
-                <option value="huggingface">Hugging Face</option>
-            </select>
-        </div>
-        <br>
-
-
+ 
           <button id="generate-summary">✨ Generate Summary</button>
           <button id="more-button" class="more-button">More Options</button>
-
+ 
           <div class="loader" id="summary-loader">
             <div class="spinner"></div>
             <p>Generating summary...</p>
           </div>
-
+ 
           <div id="summary">Summary will be generated here.</div>
         </div>
-
+ 
         <!-- Chatbot Mode Content -->
         <div id="chatbot-mode" class="mode-content hidden">
           <div class="chat-container">
@@ -167,7 +155,7 @@
         </div>
       </div>
     </div>
-
+ 
     <script src="scripts/auth.js"></script>
     <script src="scripts/popup.js"></script>
     <script src="scripts/chatbot.js"></script>
