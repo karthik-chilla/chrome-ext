@@ -33,12 +33,11 @@ function isValidUrl(url) {
 
 */
 
-
 async function generateSummaryWithGemini(text, type) {
   const prompt = `Summarize the following content in ${
     type === "short" ? "1-2 sentences" : "2-3 paragraphs"
   }:\n\n${truncateText(text)}`;
-  
+
   const result = await model.generateContent(prompt);
   return await result.response.text();
 }
@@ -137,7 +136,15 @@ async function summarise(req, res) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const { text, type, url, domain, title, save, aiProvider = "gemini" } = req.body;
+    const {
+      text,
+      type,
+      url,
+      domain,
+      title,
+      save,
+      aiProvider = "gemini",
+    } = req.body;
 
     const isFileSummary = url.startsWith("file-");
     if (!isFileSummary && !isValidUrl(url)) {
@@ -145,7 +152,10 @@ async function summarise(req, res) {
       return res.status(400).json({ error: "Invalid URL" });
     }
 
-    let existingSummary = await Summary.findOne({ url, user: req.user._id }).populate("tags");
+    let existingSummary = await Summary.findOne({
+      url,
+      user: req.user._id,
+    }).populate("tags");
 
     if (existingSummary) {
       // Return the existing summary if it matches the requested type
@@ -182,18 +192,17 @@ async function summarise(req, res) {
       }
     } catch (error) {
       console.error(`${aiProvider} API Error:`, error);
-      return res.status(500).json({ 
+      return res.status(500).json({
         error: `Failed to generate summary with ${aiProvider}. Falling back to Gemini.`,
-        fallback: true 
+        fallback: true,
       });
     }
 
     if (save) {
-      
       if (!existingSummary) {
         // Generate tags and get their IDs
         const tagIds = await generateTags(text, req.user._id);
-        
+
         existingSummary = new Summary({
           user: req.user._id,
           url,
@@ -215,9 +224,13 @@ async function summarise(req, res) {
       }
       await existingSummary.save();
 
-      const totalSummaries = await Summary.countDocuments({ user: req.user._id });
+      const totalSummaries = await Summary.countDocuments({
+        user: req.user._id,
+      });
       if (totalSummaries > 100) {
-        const leastUsedRecord = await Summary.findOne({ user: req.user._id }).sort({
+        const leastUsedRecord = await Summary.findOne({
+          user: req.user._id,
+        }).sort({
           lastAccessed: 1,
         });
         if (leastUsedRecord) {
@@ -231,8 +244,6 @@ async function summarise(req, res) {
     console.error("Error:", error);
     res.status(500).json({ error: "Error fetching summary" });
   }
-
-
 }
 
 module.exports = summarise;
