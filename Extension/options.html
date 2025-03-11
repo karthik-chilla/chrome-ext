@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>More Options</title>
     <link rel="stylesheet" href="styles/options.css" />
+    <script src="scripts/chart.min.js"></script>
   </head>
   <body>
     <div class="container">
@@ -82,7 +83,7 @@
         <!-- Admin Panel Section -->
         <div id="admin-content" class="content-section hidden">
           <div class="admin-header">
-            <h3>User Management</h3>
+            <h3>Analytics dashboard</h3>
             <div class="admin-stats">
               <div class="stat-box">
                 <span class="stat-label">Total Users</span>
@@ -99,6 +100,25 @@
               <div class="stat-box">
                 <span class="stat-label">Premium Users</span>
                 <span id="premium-users" class="stat-value">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-container">
+            <div class="analytics-row">
+              <div class="chart-container">
+                <canvas id="userSubscriptionsChart"></canvas>
+              </div>
+              <div class="chart-container">
+                <canvas id="summaryTypesChart"></canvas>
+              </div>
+            </div>
+            <div class="analytics-row">
+              <div class="chart-container">
+                <canvas id="dailySummariesChart"></canvas>
+              </div>
+              <div class="chart-container">
+                <canvas id="topDomainsChart"></canvas>
               </div>
             </div>
           </div>

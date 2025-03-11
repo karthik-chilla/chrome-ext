@@ -18,14 +18,10 @@ const summarySchema = new mongoose.Schema({
   domain: String,
   title: String,
   text: { type: String },
-  shortSummary_gemini: String,
-  longSummary_gemini: String,
-  shortSummary_gemma: String,
-  longSummary_gemma: String,
-  shortSummary_llama: String,
-  longSummary_llama: String,
-  shortSummary_mixtral: String,
-  longSummary_mixtral: String,
+  shortSummary: String,
+  longSummary: String,
+  aiProvider: { type: String, enum: ['gemini','gemma','llama','mixtral','t5', 'all'], default: 'gemini' },
+
   lastAccessed: { type: Date, default: Date.now },
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag", default: [] }],
 });
