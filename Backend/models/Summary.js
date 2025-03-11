@@ -18,8 +18,14 @@ const summarySchema = new mongoose.Schema({
   domain: String,
   title: String,
   text: { type: String },
-  shortSummary: String,
-  longSummary: String,
+  shortSummary_gemini: String,
+  longSummary_gemini: String,
+  shortSummary_gemma: String,
+  longSummary_gemma: String,
+  shortSummary_llama: String,
+  longSummary_llama: String,
+  shortSummary_mixtral: String,
+  longSummary_mixtral: String,
   lastAccessed: { type: Date, default: Date.now },
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag", default: [] }],
 });
@@ -27,7 +33,6 @@ const summarySchema = new mongoose.Schema({
 summarySchema.index({ url: 1, user: 1 }, { unique: true });
 
 const Summary = mongoose.model("Summary", summarySchema);
-
 const Tag = mongoose.model("Tag", tagSchema);
 
 module.exports = { Summary, Tag };
