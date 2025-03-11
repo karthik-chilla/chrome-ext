@@ -33,6 +33,7 @@ async function loadModel() {
 
 loadModel();
 
+
 function truncateText(text, maxTokens = 30000) {
   return text.split(" ").slice(0, maxTokens).join(" ");
 }
@@ -45,17 +46,6 @@ function isValidUrl(url) {
     return false;
   }
 }
-
-/*const isFileSummary = url.startsWith("file-");
-    if (!isFileSummary && !isValidUrl(url)) {
-      console.error("Invalid URL:", url);
-      return res.status(400).json({ error: "Invalid URL" });
-    }
-    if (!isValidUrl(url)) {
-      return res.status(400).json({ error: "Invalid URL" });
-    }
-
-*/
 
 async function generateSummaryWithGemini(text, type) {
   const prompt = `Summarize the following content in ${
@@ -135,6 +125,7 @@ async function generateSummaryWithT5(text, type) {
   } catch (error) {
     console.error("Google T5 Error:", error.message);
     throw new Error("Failed to generate summary with Google T5");
+
   }
 }
 
@@ -155,7 +146,6 @@ async function generateTags(text, userId) {
 
     const tagIds = [];
     for (const tagName of tagNames) {
-      // Find existing tag or create new one
       let tag = await Tag.findOne({ name: tagName, userId });
       if (!tag) {
         tag = await Tag.create({ name: tagName, userId });
@@ -166,7 +156,7 @@ async function generateTags(text, userId) {
     return tagIds;
   } catch (error) {
     console.error("Tag Generation Error:", error.message);
-    return []; // Return empty array if tag generation fails
+    return [];
   }
 }
 
@@ -323,18 +313,16 @@ async function summarise(req, res) {
       return res.status(400).json({ error: "Invalid URL" });
     }
 
+    // Check if summary exists with the requested provider
     let existingSummary = await Summary.findOne({
       url,
       user: req.user._id,
     }).populate("tags");
 
     if (existingSummary) {
-      // Return the existing summary if it matches the requested type
-      if (type === "short" && existingSummary.shortSummary) {
-        return res.json({ response: existingSummary.shortSummary });
-      }
-      if (type === "long" && existingSummary.longSummary) {
-        return res.json({ response: existingSummary.longSummary });
+      const summaryField = `${type}Summary_${aiProvider}`;
+      if (existingSummary[summaryField]) {
+        return res.json({ response: existingSummary[summaryField] });
       }
     }
 
@@ -352,6 +340,7 @@ async function summarise(req, res) {
               break;
           default:
               throw new Error("Invalid AI provider selected");
+
       }
 
 
@@ -377,26 +366,27 @@ async function summarise(req, res) {
 
     if (save) {
       if (!existingSummary) {
-        // Generate tags and get their IDs
         const tagIds = await generateTags(text, req.user._id);
 
-        existingSummary = new Summary({
+        // Create new summary document with provider-specific fields
+        const summaryData = {
           user: req.user._id,
           url,
           domain: typeof domain === "string" ? domain : String(domain),
           title: typeof title === "string" ? title : String(title),
           text,
-          shortSummary: type === "short" ? generatedSummary : "",
-          longSummary: type === "long" ? generatedSummary : "",
           lastAccessed: new Date(),
           tags: tagIds,
-        });
+        };
+
+        // Add the summary to the correct provider field
+        summaryData[`${type}Summary_${aiProvider}`] = generatedSummary;
+
+        existingSummary = new Summary(summaryData);
       } else {
-        if (type === "short") {
-          existingSummary.shortSummary = generatedSummary;
-        } else {
-          existingSummary.longSummary = generatedSummary;
-        }
+        // Update the correct provider field
+        const summaryField = `${type}Summary_${aiProvider}`;
+        existingSummary[summaryField] = generatedSummary;
         existingSummary.lastAccessed = new Date();
       }
       await existingSummary.save();

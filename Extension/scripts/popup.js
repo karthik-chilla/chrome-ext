@@ -4,6 +4,7 @@
   const summaryLoader = document.getElementById("summary-loader");
   const summary = document.getElementById("summary");
   const summaryTypeCheckbox = document.getElementById("summaryType");
+  const aiProviderSelect = document.getElementById("ai-provider");
 
   // Mode switching
   const summaryModeBtn = document.getElementById("summary-mode-btn");
@@ -110,6 +111,7 @@
 
   function generateSummary() {
     const type = summaryTypeCheckbox.checked ? "long" : "short";
+    const aiProvider = aiProviderSelect.value;
 
     summaryLoader.style.display = "block";
     summary.innerText = "";
@@ -125,7 +127,8 @@
               type,
               tabs[0].url,
               new URL(tabs[0].url).hostname,
-              !isSelected
+              !isSelected,
+              aiProvider
             );
           } else {
             summaryLoader.style.display = "none";
@@ -148,7 +151,7 @@
     return { text: document.body.innerText.slice(0, 5000), isSelected: false };
   }
 
-  function fetchSummary(text, type, url, domain, save) {
+  function fetchSummary(text, type, url, domain, save, aiProvider) {
     fetch("http://localhost:3000/summarize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -159,11 +162,19 @@
         title: document.title,
         type,
         save,
+        aiProvider,
       }),
       credentials: "include",
     })
       .then((response) => response.json())
       .then((data) => {
+        if (data.fallback) {
+          // Show fallback message and retry with Gemini
+          summary.innerText = data.error + "\n\nRetrying with Gemini...";
+          aiProviderSelect.value = "gemini";
+          setTimeout(() => generateSummary(), 2000);
+          return;
+        }
         summaryLoader.style.display = "none";
         summary.innerText = data.response;
       })
