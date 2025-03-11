@@ -3,11 +3,16 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require("axios");
 
 const API_KEY = process.env.GEMINI_API_KEY;
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
-const HUGGING_FACE_API_KEY = process.env.HUGGING_FACE_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
 const genAI = new GoogleGenerativeAI(API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+
+const GROQ_MODELS = {
+  gemma: "gemma2-9b-it",
+  llama: "llama-3.2-1b-preview",
+  mixtral: "mixtral-8x7b-32768",
+};
 
 function truncateText(text, maxTokens = 30000) {
   return text.split(" ").slice(0, maxTokens).join(" ");
@@ -22,17 +27,6 @@ function isValidUrl(url) {
   }
 }
 
-/*const isFileSummary = url.startsWith("file-");
-    if (!isFileSummary && !isValidUrl(url)) {
-      console.error("Invalid URL:", url);
-      return res.status(400).json({ error: "Invalid URL" });
-    }
-    if (!isValidUrl(url)) {
-      return res.status(400).json({ error: "Invalid URL" });
-    }
-
-*/
-
 async function generateSummaryWithGemini(text, type) {
   const prompt = `Summarize the following content in ${
     type === "short" ? "1-2 sentences" : "2-3 paragraphs"
@@ -42,24 +36,33 @@ async function generateSummaryWithGemini(text, type) {
   return await result.response.text();
 }
 
-async function generateSummaryWithDeepSeek(text, type) {
+async function generateSummaryWithGroq(text, type, modelType) {
   try {
     const response = await axios.post(
-      "https://api.deepseek.com/v1/chat/completions",
+      "https://api.groq.com/openai/v1/chat/completions",
       {
-        model: "deepseek-chat",
+        model: GROQ_MODELS[modelType],
         messages: [
           {
+            role: "system",
+            content:
+              "You are a helpful AI assistant that specializes in creating concise and accurate summaries.",
+          },
+          {
             role: "user",
-            content: `Summarize the following content in ${
-              type === "short" ? "1-2 sentences" : "2-3 paragraphs"
-            }:\n\n${truncateText(text)}`,
+            content: `Please provide a ${
+              type === "short"
+                ? "concise 1-2 sentence"
+                : "detailed 2-3 paragraph"
+            } summary of the following text:\n\n${truncateText(text)}`,
           },
         ],
+        temperature: 0.7,
+        max_tokens: type === "short" ? 100 : 500,
       },
       {
         headers: {
-          Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+          Authorization: `Bearer ${GROQ_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
@@ -67,35 +70,11 @@ async function generateSummaryWithDeepSeek(text, type) {
 
     return response.data.choices[0].message.content;
   } catch (error) {
-    console.error("DeepSeek API Error:", error.message);
-    throw new Error("Failed to generate summary with DeepSeek");
-  }
-}
-
-async function generateSummaryWithHuggingFace(text, type) {
-  try {
-    const response = await axios.post(
-      "https://api-inference.huggingface.co/models/facebook/bart-large-cnn",
-      {
-        inputs: truncateText(text),
-        parameters: {
-          max_length: type === "short" ? 64 : 256,
-          min_length: type === "short" ? 32 : 128,
-          do_sample: false,
-        },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${HUGGING_FACE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
+    console.error(
+      `Groq API Error (${modelType}):`,
+      error.response?.data || error.message
     );
-
-    return response.data[0].summary_text;
-  } catch (error) {
-    console.error("Hugging Face API Error:", error.message);
-    throw new Error("Failed to generate summary with Hugging Face");
+    throw new Error(`Failed to generate summary with ${modelType}`);
   }
 }
 
@@ -115,7 +94,6 @@ async function generateTags(text, userId) {
 
     const tagIds = [];
     for (const tagName of tagNames) {
-      // Find existing tag or create new one
       let tag = await Tag.findOne({ name: tagName, userId });
       if (!tag) {
         tag = await Tag.create({ name: tagName, userId });
@@ -126,7 +104,7 @@ async function generateTags(text, userId) {
     return tagIds;
   } catch (error) {
     console.error("Tag Generation Error:", error.message);
-    return []; // Return empty array if tag generation fails
+    return [];
   }
 }
 
@@ -152,43 +130,37 @@ async function summarise(req, res) {
       return res.status(400).json({ error: "Invalid URL" });
     }
 
+    // Check if summary exists with the requested provider
     let existingSummary = await Summary.findOne({
       url,
       user: req.user._id,
     }).populate("tags");
 
     if (existingSummary) {
-      // Return the existing summary if it matches the requested type
-      if (type === "short" && existingSummary.shortSummary) {
-        return res.json({ response: existingSummary.shortSummary });
-      }
-      if (type === "long" && existingSummary.longSummary) {
-        return res.json({ response: existingSummary.longSummary });
+      const summaryField = `${type}Summary_${aiProvider}`;
+      if (existingSummary[summaryField]) {
+        return res.json({ response: existingSummary[summaryField] });
       }
     }
 
     let generatedSummary;
     try {
-      switch (aiProvider.toLowerCase()) {
-        case "deepseek":
-          if (!DEEPSEEK_API_KEY) {
-            throw new Error("DeepSeek API key not configured");
-          }
-          generatedSummary = await generateSummaryWithDeepSeek(text, type);
-          break;
-        case "huggingface":
-          if (!HUGGING_FACE_API_KEY) {
-            throw new Error("Hugging Face API key not configured");
-          }
-          generatedSummary = await generateSummaryWithHuggingFace(text, type);
-          break;
-        case "gemini":
-        default:
-          if (!API_KEY) {
-            throw new Error("Gemini API key not configured");
-          }
-          generatedSummary = await generateSummaryWithGemini(text, type);
-          break;
+      if (aiProvider === "gemini") {
+        if (!API_KEY) {
+          throw new Error("Gemini API key not configured");
+        }
+        generatedSummary = await generateSummaryWithGemini(text, type);
+      } else if (Object.keys(GROQ_MODELS).includes(aiProvider)) {
+        if (!GROQ_API_KEY) {
+          throw new Error("Groq API key not configured");
+        }
+        generatedSummary = await generateSummaryWithGroq(
+          text,
+          type,
+          aiProvider
+        );
+      } else {
+        throw new Error(`Invalid AI provider: ${aiProvider}`);
       }
     } catch (error) {
       console.error(`${aiProvider} API Error:`, error);
@@ -200,26 +172,27 @@ async function summarise(req, res) {
 
     if (save) {
       if (!existingSummary) {
-        // Generate tags and get their IDs
         const tagIds = await generateTags(text, req.user._id);
 
-        existingSummary = new Summary({
+        // Create new summary document with provider-specific fields
+        const summaryData = {
           user: req.user._id,
           url,
           domain: typeof domain === "string" ? domain : String(domain),
           title: typeof title === "string" ? title : String(title),
           text,
-          shortSummary: type === "short" ? generatedSummary : "",
-          longSummary: type === "long" ? generatedSummary : "",
           lastAccessed: new Date(),
           tags: tagIds,
-        });
+        };
+
+        // Add the summary to the correct provider field
+        summaryData[`${type}Summary_${aiProvider}`] = generatedSummary;
+
+        existingSummary = new Summary(summaryData);
       } else {
-        if (type === "short") {
-          existingSummary.shortSummary = generatedSummary;
-        } else {
-          existingSummary.longSummary = generatedSummary;
-        }
+        // Update the correct provider field
+        const summaryField = `${type}Summary_${aiProvider}`;
+        existingSummary[summaryField] = generatedSummary;
         existingSummary.lastAccessed = new Date();
       }
       await existingSummary.save();
