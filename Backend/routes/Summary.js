@@ -446,42 +446,67 @@ router.get("/generate", async (req, res) => {
 });
 
 
-router.post("/file-summary", upload.single('file'), async (req, res) => {
+router.get("/user-analytics", async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
+    const userId = req.user._id;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    if (req.user.subscription === 'free') {
-      return res.status(403).json({ error: "Upgrade to Premium for file summaries", redirectTo: 'payment' });
-    }
+    // Get all summaries for the user
+    const summaries = await Summary.find({
+      user: userId,
+      lastAccessed: { $gte: thirtyDaysAgo }
+    });
 
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
+    // Calculate daily summaries
+    const dailySummaries = {};
+    const domains = {};
+    const summaryTypes = { short: 0, long: 0 };
+    const aiProviders = {};
 
-    const text = req.file.buffer.toString('utf-8');
-    const type = req.body.type || 'short';
+    summaries.forEach(summary => {
+      // Daily summaries
+      const date = summary.lastAccessed.toISOString().split('T')[0];
+      dailySummaries[date] = (dailySummaries[date] || 0) + 1;
 
-    // Create a mock request object with the necessary properties
-    const mockReq = {
-      user: req.user,
-      body: {
-        text,
-        type,
-        save: false,
-        url: `file://${req.file.originalname}`, // Generate a unique URL for file summaries
-        domain: 'File Summary',
-        title: req.file.originalname
+      // Domain stats
+      if (summary.domain) {
+        domains[summary.domain] = (domains[summary.domain] || 0) + 1;
       }
-    };
 
-    await summarise(mockReq, res);
+      // Summary types
+      if (summary.shortSummary) summaryTypes.short++;
+      if (summary.longSummary) summaryTypes.long++;
+
+      // AI Provider stats
+      if (summary.aiProvider) {
+        aiProviders[summary.aiProvider] = (aiProviders[summary.aiProvider] || 0) + 1;
+      }
+    });
+
+    // Get today's summaries
+    const today = new Date().toISOString().split('T')[0];
+    const todaySummaries = dailySummaries[today] || 0;
+
+    // Get most used AI provider
+    const favoriteAi = Object.entries(aiProviders)
+      .sort(([,a], [,b]) => b - a)[0]?.[0] || 'None';
+
+    res.json({
+      totalSummaries: summaries.length,
+      todaySummaries,
+      favoriteAi,
+      dailySummaries,
+      domains,
+      summaryTypes,
+      aiProviders
+    });
   } catch (error) {
-    console.error("File summary error:", error);
-    res.status(500).json({ error: "Failed to process file summary" });
+    console.error("Error fetching user analytics:", error);
+    res.status(500).json({ error: "Failed to fetch analytics" });
   }
 });
+
 
 
 router.post("/file-summary", upload.single('file'), async (req, res) => {

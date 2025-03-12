@@ -174,9 +174,32 @@
       });
   }
 });*/
+function checkRestrictedWebsite() {
+  return new Promise((resolve) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const restrictedDomains = ['youtube.com', 'netflix.com', 'hulu.com', 'amazon.com/video'];
+      const url = tabs[0].url;
+      const isRestricted = restrictedDomains.some(domain => url.includes(domain));
+      
+      if (isRestricted) {
+        summary.innerHTML = `
+          <div class="restricted-site-message">
+            <h3>⚠️ Restricted Website</h3>
+            <p>This extension doesn't work on streaming/video websites.</p>
+          </div>
+        `;
+        generateSummaryBtn.disabled = true;
+        generateSummaryBtn.style.opacity = '0.5';
+      }
+      resolve(isRestricted);
+    });
+  });
+}
 
+document.addEventListener("DOMContentLoaded", async function () {
+  const isRestricted = await checkRestrictedWebsite();
+  if (isRestricted) return;
 
-document.addEventListener("DOMContentLoaded", function () {
   const generateSummaryBtn = document.getElementById("generate-summary");
   const moreButton = document.getElementById("more-button");
   const summaryLoader = document.getElementById("summary-loader");
@@ -271,8 +294,22 @@ document.addEventListener("DOMContentLoaded", function () {
     summary.textContent = "Summary will be generated here.";
   });
 
+  aiProviderSelect.addEventListener("change", function() {
+    if (this.value === "selectone") {
+      generateSummaryBtn.disabled = true;
+      generateSummaryBtn.style.opacity = '0.5';
+    } else {
+      generateSummaryBtn.disabled = false;
+      generateSummaryBtn.style.opacity = '1';
+    }
+  });
+
   // Check if user is authenticated before allowing summary generation
   generateSummaryBtn.addEventListener("click", function () {
+    if (aiProviderSelect.value === "selectone") {
+      summary.innerText = "Please select an AI provider first.";
+      return;
+    }
     chrome.runtime.sendMessage({ action: "checkAuth" }, function (response) {
       if (response && response.isAuthenticated) {
         generateSummary();

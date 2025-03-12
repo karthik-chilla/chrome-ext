@@ -1344,17 +1344,13 @@
 */
 
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Check if URL has #payment hash and switch to payment section
-  if (window.location.hash === "#payment") {
-    const paymentLink = document.getElementById("payment");
-    const paymentContent = document.getElementById("payment-content");
-    setActiveSection(paymentLink, paymentContent);
-    fetchPlans();
-    fetchPaymentHistory();
-  }
 
-
+document.addEventListener('DOMContentLoaded', function() {
+  // Get all section links and content sections
+  const sectionLinks = document.querySelectorAll('.sidebar a');
+  const contentSections = document.querySelectorAll('.content-section');
+  
+  // Get DOM elements
   const pastSummariesLink = document.getElementById("past-summaries");
   const fileSummariesLink = document.getElementById("file-summaries");
   const tagsLink = document.getElementById("tags");
@@ -1362,35 +1358,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const paymentLink = document.getElementById("payment");
   const adminPanelLink = document.getElementById("admin-panel");
 
-  const pastSummariesContent = document.getElementById(
-    "past-summaries-content"
-  );
-  const fileSummariesContent = document.getElementById(
-    "file-summaries-content"
-  );
+  const pastSummariesContent = document.getElementById("past-summaries-content");
+  const fileSummariesContent = document.getElementById("file-summaries-content");
   const tagsContent = document.getElementById("tags-content");
   const profileContent = document.getElementById("profile-content");
   const paymentContent = document.getElementById("payment-content");
   const adminContent = document.getElementById("admin-content");
 
   const searchBar = document.getElementById("search-bar");
-  const aiFilter = document.createElement('select');
-  aiFilter.id = 'ai-filter';
-  aiFilter.className = 'ai-filter';
-  aiFilter.innerHTML = `
-    <option value="all">All AI Providers</option>
-    <option value="gemini">Google Gemini</option>
-    <option value="llama">llama</option>
-    <option value="gemma">Gemma</option>
-    <option value="mixtral">Mixtral</option>
-    <option value="t5">Google T5</option>
-  `;
-  searchBar.parentNode.insertBefore(aiFilter, searchBar.nextSibling);
-
   const userSearch = document.getElementById("user-search");
   const subscriptionFilter = document.getElementById("subscription-filter");
   const roleFilter = document.getElementById("role-filter");
-
   const pastSummariesList = document.getElementById("past-summaries-list");
   const tagsList = document.getElementById("tags-list");
   const userInfo = document.getElementById("user-info");
@@ -1405,78 +1383,65 @@ document.addEventListener("DOMContentLoaded", () => {
   const downloadButton = document.getElementById("download-file-summary");
   const fileSummaryType = document.getElementById("fileSummaryType");
 
-  
-  setActiveSection(profileLink, profileContent);
-  fetchProfile();
+  // Add AI provider filter
+  const aiFilter = document.createElement('select');
+  aiFilter.id = 'ai-filter';
+  aiFilter.className = 'ai-filter';
+  aiFilter.innerHTML = `
+    <option value="all">All AI Providers</option>
+    <option value="gemini">Google Gemini</option>
+    <option value="llama">llama</option>
+    <option value="gemma">Gemma</option>
+    <option value="mixtral">Mixtral</option>
+    <option value="t5">Google T5</option>
+  `;
+  searchBar.parentNode.insertBefore(aiFilter, searchBar.nextSibling);
 
+  // State variables
   let currentSummaryContent = null;
   let currentSummaryType = "short";
-
   let currentUserRole = null;
 
-  checkAuth();
-
-  function checkAuth() {
-    fetch("http://localhost:3000/auth/status", {
-      method: "GET",
-      credentials: "include",
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (!data.isAuthenticated) {
-          window.close();
-          chrome.runtime.sendMessage({ action: "openPopup" });
-        } else {
-          currentUserRole = data.user.role;
-          if (currentUserRole === "super_admin") {
-            adminPanelLink.classList.remove("hidden");
-            adminPanelLink.classList.add("visible");
-            fetchUsers();
-          }
-          fetchPastSummaries();
-        }
-      })
-      .catch((error) => {
-        console.error("Auth check error:", error);
-        showError("Could not connect to server. Please try again later.");
-      });
+  // Check if URL has #payment hash and switch to payment section
+  if (window.location.hash === "#payment") {
+    setActiveSection(paymentLink, paymentContent);
+    fetchPlans();
+    fetchPaymentHistory();
+  } else {
+    // Default to profile section
+    setActiveSection(profileLink, profileContent);
+    fetchProfile();
   }
 
-  // Add modal HTML to the document
-  const modalHTML = `
+  // Initial auth check
+  checkAuth();
+
+  // Add modal HTML
+  document.body.insertAdjacentHTML("beforeend", `
     <div id="userModal" class="modal hidden">
       <div class="modal-content">
         <span class="close-modal">&times;</span>
         <div id="userModalContent"></div>
       </div>
     </div>
-  `;
-  document.body.insertAdjacentHTML("beforeend", modalHTML);
+  `);
 
   const userModal = document.getElementById("userModal");
   const closeModal = document.querySelector(".close-modal");
 
-  closeModal.addEventListener("click", () => {
-    userModal.classList.add("hidden");
+  // Event Listeners
+  closeModal.addEventListener("click", () => userModal.classList.add("hidden"));
+  window.addEventListener("click", (e) => {
+    if (e.target === userModal) userModal.classList.add("hidden");
   });
 
-  window.addEventListener("click", (event) => {
-    if (event.target === userModal) {
-      userModal.classList.add("hidden");
-    }
-  });
-
-  fileSummariesLink.addEventListener("click", () => {
-    checkSubscriptionForFileSummaries();
-  });
-
+  fileSummariesLink.addEventListener("click", checkSubscriptionForFileSummaries);
   fileSummaryType.addEventListener("change", () => {
     currentSummaryType = fileSummaryType.checked ? "long" : "short";
   });
 
   uploadButton.addEventListener("click", handleFileUpload);
   downloadButton.addEventListener("click", handleDownload);
-
   pastSummariesLink.addEventListener("click", () => {
     setActiveSection(pastSummariesLink, pastSummariesContent);
     fetchPastSummaries();
@@ -1490,6 +1455,7 @@ document.addEventListener("DOMContentLoaded", () => {
   profileLink.addEventListener("click", () => {
     setActiveSection(profileLink, profileContent);
     fetchProfile();
+    loadUserAnalytics();
   });
 
   paymentLink.addEventListener("click", () => {
@@ -1522,25 +1488,179 @@ document.addEventListener("DOMContentLoaded", () => {
   searchBar.addEventListener("input", (e) => {
     fetchPastSummaries(e.target.value);
   });
+  
+  aiFilter.addEventListener("change", () => fetchPastSummaries(searchBar.value));
 
+  // Functions
   function setActiveSection(link, content) {
-    // Remove active class from all links
-    document.querySelectorAll(".sidebar a").forEach((el) => {
-      el.classList.remove("active");
-    });
-
-    // Add active class to clicked link
-    link.classList.add("active");
-
-    // Hide all content sections
-    document.querySelectorAll(".content-section").forEach((el) => {
+    sectionLinks.forEach(el => el.classList.remove("active"));
+    contentSections.forEach(el => {
       el.classList.remove("active");
       el.classList.add("hidden");
     });
-
-    // Show selected content section
+    
+    link.classList.add("active");
     content.classList.remove("hidden");
     content.classList.add("active");
+  }
+
+  async function checkAuth() {
+    try {
+      const response = await fetch("http://localhost:3000/auth/status", {
+        credentials: "include"
+      });
+      const data = await response.json();
+
+      if (!data.isAuthenticated) {
+        window.close();
+        chrome.runtime.sendMessage({ action: "openPopup" });
+      } else {
+        currentUserRole = data.user.role;
+        if (currentUserRole === "super_admin") {
+          adminPanelLink.classList.remove("hidden");
+          adminPanelLink.classList.add("visible");
+          fetchUsers();
+        }
+        fetchPastSummaries();
+      }
+    } catch (error) {
+      console.error("Auth check error:", error);
+      showError("Could not connect to server. Please try again later.");
+    }
+  }
+
+  // Analytics Functions
+  async function loadUserAnalytics() {
+    try {
+      const response = await fetch('http://localhost:3000/summarize/user-analytics', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      // Update stats
+      document.getElementById('user-total-summaries').textContent = data.totalSummaries;
+      document.getElementById('user-today-summaries').textContent = data.todaySummaries;
+      document.getElementById('user-favorite-ai').textContent = data.favoriteAi;
+
+      // Create charts
+      createDailySummariesChart(data.dailySummaries);
+      createSummaryTypesChart(data.summaryTypes);
+      createTopDomainsChart(data.domains);
+      createAiProvidersChart(data.aiProviders);
+    } catch (error) {
+      console.error('Error loading analytics:', error);
+    }
+  }
+
+  function createDailySummariesChart(dailyData) {
+    const ctx = document.getElementById('userDailySummariesChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Object.keys(dailyData),
+        datasets: [{
+          label: 'Daily Summaries',
+          data: Object.values(dailyData),
+          borderColor: '#007bff',
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Daily Summary Activity'
+          }
+        }
+      }
+    });
+  }
+
+  function createSummaryTypesChart(typesData) {
+    const ctx = document.getElementById('userSummaryTypesChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'pie',
+      data: {
+        labels: ['Short', 'Long'],
+        datasets: [{
+          data: [typesData.short, typesData.long],
+          backgroundColor: ['#007bff', '#28a745']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Summary Types Distribution'
+          }
+        }
+      }
+    });
+  }
+
+  function createTopDomainsChart(domainsData) {
+    const domains = Object.keys(domainsData);
+    const counts = Object.values(domainsData);
+    
+    const ctx = document.getElementById('userTopDomainsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: domains,
+        datasets: [{
+          label: 'Summaries per Domain',
+          data: counts,
+          backgroundColor: '#007bff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Top Domains'
+          }
+        }
+      }
+    });
+  }
+
+  function createAiProvidersChart(providersData) {
+    const providers = Object.keys(providersData);
+    const counts = Object.values(providersData);
+    
+    const ctx = document.getElementById('userAiProvidersChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: providers,
+        datasets: [{
+          data: counts,
+          backgroundColor: [
+            '#007bff',
+            '#28a745',
+            '#dc3545',
+            '#ffc107',
+            '#17a2b8'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: {
+            display: true,
+            text: 'AI Providers Usage'
+          }
+        }
+      }
+    });
   }
 
   async function checkSubscriptionForFileSummaries() {
@@ -1921,7 +2041,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   }
-
+  
 
   async function fetchAndDisplayAnalytics() {
     try {
@@ -2091,6 +2211,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  
+
   function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -2102,6 +2224,9 @@ document.addEventListener("DOMContentLoaded", () => {
       timeout = setTimeout(later, wait);
     };
   }
+  
+  
+  
   /*
   async function fetchPastSummaries(query = "") {
     try {
@@ -2672,11 +2797,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const errorDiv = document.createElement("div");
     errorDiv.className = "error-message";
     errorDiv.textContent = message;
-    document.body.prepend(errorDiv);
+    document.body.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 5000);
+  }
 
-    setTimeout(() => {
-      errorDiv.remove();
-    }, 5000);
+  if(profileContent.classList.contains('active')){
+    loadUserAnalytics();
   }
 
 

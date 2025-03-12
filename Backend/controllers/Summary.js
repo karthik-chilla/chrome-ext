@@ -139,6 +139,7 @@ async function generateSummaryWithT5(text, type) {
 }
 
 
+
 async function generateTags(text, userId) {
   try {
     const prompt = `Generate 3-5 relevant tags for the following text. Return only comma-separated tags:\n\n${text.substring(
@@ -299,6 +300,8 @@ async function summarise(req, res) {
     res.status(500).json({ error: "Error fetching summary" });
   }
 }
+
+
 
 /*
 async function summarise(req, res) {
