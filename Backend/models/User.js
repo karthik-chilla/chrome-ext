@@ -1,5 +1,12 @@
 const mongoose = require("mongoose");
 
+const SummaryHistorySchema = new mongoose.Schema({
+  timestamp: { type: Date, default: Date.now },
+  type: { type: String, enum: ['short', 'long'] },
+  url: String,
+  domain: String
+});
+
 const UserSchema = new mongoose.Schema({
   googleId: { type: String, unique: true, sparse: true },
   name: String,
@@ -38,6 +45,11 @@ const UserSchema = new mongoose.Schema({
       status: String,
     },
   ],
+
+  summaryCount: { type: Number, default: 0 },
+  summaryHistory: [SummaryHistorySchema]
+  
+
 });
 
 module.exports = mongoose.model("User", UserSchema);
