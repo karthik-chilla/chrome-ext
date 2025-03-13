@@ -187,12 +187,41 @@ async function summarise(req, res) {
         isRestricted: true,
       });
     }
-
+    
+    /*
     const isFileSummary = url.startsWith("file-");
     if (!isFileSummary && !isValidUrl(url)) {
       console.error("Invalid URL:", url);
       return res.status(400).json({ error: "Invalid URL" });
+    }*/
+    
+    const isFileSummary = url.startsWith("file-summary-");
+    if (!isFileSummary) {
+      const restrictedDomains = [
+        "youtube.com",
+        "netflix.com",
+        "hulu.com",
+        "amazon.com/video",
+      ];
+
+      try {
+        const urlObj = new URL(url);
+        const isDomainRestricted = restrictedDomains.some((domain) =>
+          urlObj.hostname.includes(domain)
+        );
+
+        if (isDomainRestricted) {
+          return res.status(403).json({
+            error: "This extension doesn't work on streaming/video websites",
+            isRestricted: true,
+          });
+        }
+      } catch (error) {
+        console.error("Invalid URL:", url);
+        return res.status(400).json({ error: "Invalid URL" });
+      }
     }
+
 
     let generatedSummary;
     try {
@@ -240,6 +269,7 @@ async function summarise(req, res) {
           existingSummary.title = title;
           existingSummary.lastAccessed = new Date();
           existingSummary.tags = tagIds;
+          existingSummary.isSaved = true;
 
           // Update the appropriate summary field and AI provider based on type
           if (type === "short") {
@@ -261,6 +291,7 @@ async function summarise(req, res) {
             text,
             lastAccessed: new Date(),
             tags: tagIds,
+            isSaved: true
           };
 
           // Set the appropriate summary field and AI provider based on type
@@ -318,3 +349,5 @@ async function summarise(req, res) {
 }
 
 module.exports = summarise;
+
+

@@ -1,6 +1,20 @@
 // Analytics related functions
+let charts = {};
+
+function destroyCharts() {
+  Object.values(charts).forEach(chart => {
+    if (chart) {
+      chart.destroy();
+    }
+  });
+  charts = {};
+}
+
 export async function loadUserAnalytics() {
   try {
+    // Destroy existing charts first
+    destroyCharts();
+
     const response = await fetch(
       "http://localhost:3000/summarize/user-analytics",
       {
@@ -30,7 +44,8 @@ export function createDailySummariesChart(dailyData) {
   const ctx = document
     .getElementById("userDailySummariesChart")
     .getContext("2d");
-  new Chart(ctx, {
+  
+  charts.dailySummaries = new Chart(ctx, {
     type: "line",
     data: {
       labels: Object.keys(dailyData),
@@ -58,7 +73,7 @@ export function createDailySummariesChart(dailyData) {
 
 export function createSummaryTypesChart(typesData) {
   const ctx = document.getElementById("userSummaryTypesChart").getContext("2d");
-  new Chart(ctx, {
+  charts.summaryTypes = new Chart(ctx, {
     type: "pie",
     data: {
       labels: ["Short", "Long"],
@@ -87,7 +102,7 @@ export function createTopDomainsChart(domainsData) {
   const counts = Object.values(domainsData);
 
   const ctx = document.getElementById("userTopDomainsChart").getContext("2d");
-  new Chart(ctx, {
+  charts.topDomains = new Chart(ctx, {
     type: "bar",
     data: {
       labels: domains,
@@ -117,7 +132,7 @@ export function createAiProvidersChart(providersData) {
   const counts = Object.values(providersData);
 
   const ctx = document.getElementById("userAiProvidersChart").getContext("2d");
-  new Chart(ctx, {
+  charts.aiProviders = new Chart(ctx, {
     type: "doughnut",
     data: {
       labels: providers,

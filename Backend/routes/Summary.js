@@ -95,7 +95,24 @@ router.get("/user-analytics", async (req, res) => {
     const summaries = await Summary.find({
       user: userId,
       lastAccessed: { $gte: thirtyDaysAgo },
+      isSaved: true
     });
+
+    let totalSummaries = 0;
+    let shortCount = 0;
+    let longCount = 0;
+
+    summaries.forEach(summary => {
+      if (summary.shortSummary) {
+        totalSummaries++;
+        shortCount++;
+      }
+      if (summary.longSummary) {
+        totalSummaries++;
+        longCount++;
+      }
+    });
+
 
     // Calculate daily summaries
     const dailySummaries = {};
@@ -106,21 +123,22 @@ router.get("/user-analytics", async (req, res) => {
     summaries.forEach((summary) => {
       // Daily summaries
       const date = summary.lastAccessed.toISOString().split("T")[0];
-      dailySummaries[date] = (dailySummaries[date] || 0) + 1;
+      dailySummaries[date] = (dailySummaries[date] || 0) + 
+        (summary.shortSummary ? 1 : 0) + (summary.longSummary ? 1 : 0);
+
 
       // Domain stats
       if (summary.domain) {
-        domains[summary.domain] = (domains[summary.domain] || 0) + 1;
+        domains[summary.domain] = (domains[summary.domain] || 0) + 
+          (summary.shortSummary ? 1 : 0) + (summary.longSummary ? 1 : 0);
       }
+      
 
-      // Summary types
-      if (summary.shortSummary) summaryTypes.short++;
-      if (summary.longSummary) summaryTypes.long++;
-
-      // AI Provider stats
-      if (summary.aiProvider) {
-        aiProviders[summary.aiProvider] =
-          (aiProviders[summary.aiProvider] || 0) + 1;
+      if (summary.shortSummary && summary.aiProvider_short) {
+        aiProviders[summary.aiProvider_short] = (aiProviders[summary.aiProvider_short] || 0) + 1;
+      }
+      if (summary.longSummary && summary.aiProvider_long) {
+        aiProviders[summary.aiProvider_long] = (aiProviders[summary.aiProvider_long] || 0) + 1;
       }
     });
 
@@ -134,12 +152,15 @@ router.get("/user-analytics", async (req, res) => {
       "None";
 
     res.json({
-      totalSummaries: summaries.length,
+      totalSummaries,
       todaySummaries,
       favoriteAi,
       dailySummaries,
       domains,
-      summaryTypes,
+      summaryTypes: {
+        short: shortCount,
+        long: longCount
+      },
       aiProviders,
     });
   } catch (error) {
@@ -147,6 +168,7 @@ router.get("/user-analytics", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch analytics" });
   }
 });
+
 
 router.post("/file-summary", upload.single("file"), async (req, res) => {
   try {
@@ -181,7 +203,7 @@ router.post("/file-summary", upload.single("file"), async (req, res) => {
         text,
         type,
         save: false,
-        url: `file://${req.file.originalname}`,
+        url: `file-summary-${Date.now()}`, 
         domain: "File Summary",
         title: req.file.originalname,
       },
@@ -205,6 +227,108 @@ router.post("/file-summary", upload.single("file"), async (req, res) => {
     res.status(500).json({ error: "Failed to process file summary" });
   }
 });
+/*
+const mammoth = require("mammoth");
+const pdfParse = require("pdf-parse");
+const textract = require("textract");
+
+const allowedMimeTypes = [
+  "text/plain", // .txt
+  "application/pdf", // .pdf
+  "application/msword", // .doc
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+];
+
+router.post("/file-summary", upload.single("file"), async (req, res) => {
+  try {
+    // Check user authentication
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    // Check user subscription
+    if (req.user.subscription === "free") {
+      return res.status(403).json({
+        error: "Upgrade to Premium for file summaries",
+        redirectTo: "payment",
+      });
+    }
+
+    // Check if a file was uploaded
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+
+    // Validate file type
+    if (!allowedMimeTypes.includes(req.file.mimetype)) {
+      return res.status(400).json({ error: "Unsupported file type" });
+    }
+
+    let text;
+
+    // Extract text based on file type
+    if (req.file.mimetype === "application/pdf") {
+      // Extract text from PDF
+      const data = await pdfParse(req.file.buffer);
+      text = data.text;
+    } else if (
+      req.file.mimetype ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      // Extract text from .docx
+      const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+      text = result.value;
+    } else if (req.file.mimetype === "application/msword") {
+      // Extract text from .doc
+      text = await new Promise((resolve, reject) => {
+        textract.fromBufferWithMime(req.file.mimetype, req.file.buffer, (err, extractedText) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(extractedText);
+          }
+        });
+      });
+    } else if (req.file.mimetype === "text/plain") {
+      // Extract text from .txt
+      text = req.file.buffer.toString("utf-8");
+    } else {
+      return res.status(400).json({ error: "Unsupported file type" });
+    }
+
+    // Use the same summarise function but with save=false
+    const mockReq = {
+      user: req.user,
+      body: {
+        text,
+        type: req.body.type || "short",
+        save: false,
+        url: `file-summary-${Date.now()}`,
+        domain: "File Summary",
+        title: req.file.originalname,
+      },
+    };
+
+    const mockRes = {
+      json: (data) => {
+        res.json(data);
+      },
+      status: (statusCode) => ({
+        json: (data) => {
+          res.status(statusCode).json(data);
+        },
+      }),
+    };
+
+    // Call the summarise function
+    await summarise(mockReq, mockRes);
+  } catch (error) {
+    console.error("File summary error:", error);
+    res.status(500).json({ error: "Failed to process file summary" });
+  }
+});
+*/
+
 
 router.post("/download-file-summary", async (req, res) => {
   try {

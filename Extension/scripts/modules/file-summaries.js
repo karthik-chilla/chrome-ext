@@ -29,14 +29,11 @@ export async function initializeFileSummaries() {
       formData.append("file", file);
       formData.append("type", type);
 
-      const response = await fetch(
-        "http://localhost:3000/summaries/file-summary",
-        {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        }
-      );
+      const response = await fetch("http://localhost:3000/summarize/file-summary", {
+        method: "POST",
+        credentials: "include",
+        body: formData
+      });
 
       const data = await response.json();
 
@@ -47,16 +44,15 @@ export async function initializeFileSummaries() {
           downloadContainer?.classList.remove("hidden");
         }
       } else if (data.redirectTo === "payment") {
-        // Handle premium requirement
         if (fileSummaryContent) {
           fileSummaryContent.innerHTML = `
-              <div class="premium-message">
-                <p>⭐ File summaries are available for premium users only</p>
-                <button onclick="window.location.hash='#payment'" class="upgrade-button">
-                  Upgrade to Premium
-                </button>
-              </div>
-            `;
+            <div class="premium-message">
+              <p>⭐ File summaries are available for premium users only</p>
+              <button onclick="window.location.hash='#payment'" class="upgrade-button">
+                Upgrade to Premium
+              </button>
+            </div>
+          `;
         }
       } else {
         throw new Error(data.error || "Failed to generate summary");
@@ -73,29 +69,24 @@ export async function initializeFileSummaries() {
     if (!currentSummary) return;
 
     try {
-      const response = await fetch(
-        "http://localhost:3000/summaries/download-file-summary",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            content: currentSummary,
-            type: summaryTypeToggle?.checked ? "long" : "short",
-          }),
-        }
-      );
+      const response = await fetch("http://localhost:3000/summarize/download-file-summary", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          content: currentSummary,
+          type: summaryTypeToggle?.checked ? "long" : "short",
+        }),
+      });
 
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${
-          summaryTypeToggle?.checked ? "long" : "short"
-        }-file-summary.txt`;
+        a.download = `${summaryTypeToggle?.checked ? "long" : "short"}-file-summary.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);

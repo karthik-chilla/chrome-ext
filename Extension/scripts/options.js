@@ -44,6 +44,18 @@ document.addEventListener("DOMContentLoaded", function () {
   let currentSummaryContent = null;
   let currentSummaryType = "short";
   let currentUserRole = null;
+  let chartInstances={};
+
+  function destroyCharts() {
+    Object.keys(chartInstances).forEach((chartId) => {
+      if (chartInstances[chartId]) {
+        chartInstances[chartId].destroy();
+        delete chartInstances[chartId];
+      }
+    });
+
+    
+  }
 
   // Check if URL has #payment hash and switch to payment section
   if (window.location.hash === "#payment") {
@@ -104,8 +116,37 @@ document.addEventListener("DOMContentLoaded", function () {
   profileLink.addEventListener("click", () => {
     setActiveSection(profileLink, profileContent);
     fetchProfile();
-    loadUserAnalytics();
+    import("./modules/analytics.js").then(({ destroyCharts, loadUserAnalytics }) => {
+      destroyCharts();
+      loadUserAnalytics();
+    });
   });
+
+  /*sectionLinks.forEach(link => {
+    link.addEventListener("click", () => {
+      if (link === profileLink) {
+        import("./modules/analytics.js").then(({ destroyCharts, loadUserAnalytics }) => {
+          destroyCharts();
+          loadUserAnalytics();
+        });
+      }
+    });
+  });*/
+
+  sectionLinks.forEach(link => {
+    link.addEventListener("click", () => {
+      if (link === profileLink) {
+        destroyCharts();
+        loadUserAnalytics();
+      } else if (link === adminPanelLink) {
+        // Reload admin analytics when switching back to admin panel
+        fetchUsers();
+        fetchAndDisplayAnalytics();
+      }
+    });
+  });
+
+
 
   paymentLink.addEventListener("click", () => {
     setActiveSection(paymentLink, paymentContent);
@@ -137,6 +178,8 @@ document.addEventListener("DOMContentLoaded", function () {
   searchBar.addEventListener("input", (e) => {
     fetchPastSummaries(e.target.value);
   });
+
+  
 
   // Functions
   function setActiveSection(link, content) {
@@ -176,9 +219,31 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  import("./modules/file-summaries.js").then(({ initializeFileSummaries }) => {
+    initializeFileSummaries();
+  });
+
   // Analytics Functions
   async function loadUserAnalytics() {
     try {
+      const profileResponse = await fetch("http://localhost:3000/profile", {
+        credentials: "include",
+      });
+      const profile = await profileResponse.json();
+
+      // If super_admin, hide analytics section and return
+      if (profile.role === "super_admin") {
+        const analyticsSection = document.querySelector(".user-analytics");
+        if (analyticsSection) {
+          analyticsSection.style.display = "none";
+        }
+        return;
+      }
+
+
+
+      destroyCharts();
+
       const response = await fetch(
         "http://localhost:3000/summarize/user-analytics",
         {
@@ -214,7 +279,7 @@ document.addEventListener("DOMContentLoaded", function () {
         labels: Object.keys(dailyData),
         datasets: [
           {
-            label: "Daily Summaries",
+            label: "Saved Summaries",
             data: Object.values(dailyData),
             borderColor: "#007bff",
             tension: 0.1,
@@ -227,7 +292,7 @@ document.addEventListener("DOMContentLoaded", function () {
         plugins: {
           title: {
             display: true,
-            text: "Daily Summary Activity",
+            text: "Saved Summary Activity",
           },
         },
       },
@@ -710,12 +775,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
   async function fetchAndDisplayAnalytics() {
     try {
+
+      destroyCharts();
+
       // Clear any existing charts to prevent memory leaks
+      /*
       const charts = document.querySelectorAll("canvas");
       charts.forEach((canvas) => {
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-      });
+      });*/
 
       const response = await fetch("http://localhost:3000/admin/analytics", {
         credentials: "include",

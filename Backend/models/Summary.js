@@ -22,16 +22,15 @@ const summarySchema = new mongoose.Schema({
   longSummary: String,
   aiProvider_short: {
     type: String,
-    enum: ["gemini", "gemma", "llama", "mixtral", "t5"],
-    default: "gemini",
+    enum: ["gemini", "gemma", "llama", "mixtral", "t5"]
   },
   aiProvider_long: {
     type: String,
-    enum: ["gemini", "gemma", "llama", "mixtral", "t5"],
-    default: "gemini",
+    enum: ["gemini", "gemma", "llama", "mixtral", "t5"]
   },
   lastAccessed: { type: Date, default: Date.now },
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag", default: [] }],
+  isSaved: {type: Boolean, default: true}
 });
 
 summarySchema.index({ url: 1, user: 1 }, { unique: true });
