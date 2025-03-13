@@ -1,9 +1,8 @@
-
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function () {
   // Get all section links and content sections
-  const sectionLinks = document.querySelectorAll('.sidebar a');
-  const contentSections = document.querySelectorAll('.content-section');
-  
+  const sectionLinks = document.querySelectorAll(".sidebar a");
+  const contentSections = document.querySelectorAll(".content-section");
+
   // Get DOM elements
   const pastSummariesLink = document.getElementById("past-summaries");
   const fileSummariesLink = document.getElementById("file-summaries");
@@ -12,8 +11,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const paymentLink = document.getElementById("payment");
   const adminPanelLink = document.getElementById("admin-panel");
 
-  const pastSummariesContent = document.getElementById("past-summaries-content");
-  const fileSummariesContent = document.getElementById("file-summaries-content");
+  const pastSummariesContent = document.getElementById(
+    "past-summaries-content"
+  );
+  const fileSummariesContent = document.getElementById(
+    "file-summaries-content"
+  );
   const tagsContent = document.getElementById("tags-content");
   const profileContent = document.getElementById("profile-content");
   const paymentContent = document.getElementById("payment-content");
@@ -37,20 +40,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const downloadButton = document.getElementById("download-file-summary");
   const fileSummaryType = document.getElementById("fileSummaryType");
 
-  // Add AI provider filter
-  const aiFilter = document.createElement('select');
-  aiFilter.id = 'ai-filter';
-  aiFilter.className = 'ai-filter';
-  aiFilter.innerHTML = `
-    <option value="all">All AI Providers</option>
-    <option value="gemini">Google Gemini</option>
-    <option value="llama">llama</option>
-    <option value="gemma">Gemma</option>
-    <option value="mixtral">Mixtral</option>
-    <option value="t5">Google T5</option>
-  `;
-  searchBar.parentNode.insertBefore(aiFilter, searchBar.nextSibling);
-
   // State variables
   let currentSummaryContent = null;
   let currentSummaryType = "short";
@@ -71,14 +60,17 @@ document.addEventListener('DOMContentLoaded', function() {
   checkAuth();
 
   // Add modal HTML
-  document.body.insertAdjacentHTML("beforeend", `
+  document.body.insertAdjacentHTML(
+    "beforeend",
+    `
     <div id="userModal" class="modal hidden">
       <div class="modal-content">
         <span class="close-modal">&times;</span>
         <div id="userModalContent"></div>
       </div>
     </div>
-  `);
+  `
+  );
 
   const userModal = document.getElementById("userModal");
   const closeModal = document.querySelector(".close-modal");
@@ -89,7 +81,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (e.target === userModal) userModal.classList.add("hidden");
   });
 
-  fileSummariesLink.addEventListener("click", checkSubscriptionForFileSummaries);
+  fileSummariesLink.addEventListener(
+    "click",
+    checkSubscriptionForFileSummaries
+  );
   fileSummaryType.addEventListener("change", () => {
     currentSummaryType = fileSummaryType.checked ? "long" : "short";
   });
@@ -142,17 +137,15 @@ document.addEventListener('DOMContentLoaded', function() {
   searchBar.addEventListener("input", (e) => {
     fetchPastSummaries(e.target.value);
   });
-  
-  aiFilter.addEventListener("change", () => fetchPastSummaries(searchBar.value));
 
   // Functions
   function setActiveSection(link, content) {
-    sectionLinks.forEach(el => el.classList.remove("active"));
-    contentSections.forEach(el => {
+    sectionLinks.forEach((el) => el.classList.remove("active"));
+    contentSections.forEach((el) => {
       el.classList.remove("active");
       el.classList.add("hidden");
     });
-    
+
     link.classList.add("active");
     content.classList.remove("hidden");
     content.classList.add("active");
@@ -161,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function checkAuth() {
     try {
       const response = await fetch("http://localhost:3000/auth/status", {
-        credentials: "include"
+        credentials: "include",
       });
       const data = await response.json();
 
@@ -186,15 +179,20 @@ document.addEventListener('DOMContentLoaded', function() {
   // Analytics Functions
   async function loadUserAnalytics() {
     try {
-      const response = await fetch('http://localhost:3000/summarize/user-analytics', {
-        credentials: 'include'
-      });
+      const response = await fetch(
+        "http://localhost:3000/summarize/user-analytics",
+        {
+          credentials: "include",
+        }
+      );
       const data = await response.json();
 
       // Update stats
-      document.getElementById('user-total-summaries').textContent = data.totalSummaries;
-      document.getElementById('user-today-summaries').textContent = data.todaySummaries;
-      document.getElementById('user-favorite-ai').textContent = data.favoriteAi;
+      document.getElementById("user-total-summaries").textContent =
+        data.totalSummaries;
+      document.getElementById("user-today-summaries").textContent =
+        data.todaySummaries;
+      document.getElementById("user-favorite-ai").textContent = data.favoriteAi;
 
       // Create charts
       createDailySummariesChart(data.dailySummaries);
@@ -202,22 +200,26 @@ document.addEventListener('DOMContentLoaded', function() {
       createTopDomainsChart(data.domains);
       createAiProvidersChart(data.aiProviders);
     } catch (error) {
-      console.error('Error loading analytics:', error);
+      console.error("Error loading analytics:", error);
     }
   }
 
   function createDailySummariesChart(dailyData) {
-    const ctx = document.getElementById('userDailySummariesChart').getContext('2d');
+    const ctx = document
+      .getElementById("userDailySummariesChart")
+      .getContext("2d");
     new Chart(ctx, {
-      type: 'line',
+      type: "line",
       data: {
         labels: Object.keys(dailyData),
-        datasets: [{
-          label: 'Daily Summaries',
-          data: Object.values(dailyData),
-          borderColor: '#007bff',
-          tension: 0.1
-        }]
+        datasets: [
+          {
+            label: "Daily Summaries",
+            data: Object.values(dailyData),
+            borderColor: "#007bff",
+            tension: 0.1,
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -225,23 +227,27 @@ document.addEventListener('DOMContentLoaded', function() {
         plugins: {
           title: {
             display: true,
-            text: 'Daily Summary Activity'
-          }
-        }
-      }
+            text: "Daily Summary Activity",
+          },
+        },
+      },
     });
   }
 
   function createSummaryTypesChart(typesData) {
-    const ctx = document.getElementById('userSummaryTypesChart').getContext('2d');
+    const ctx = document
+      .getElementById("userSummaryTypesChart")
+      .getContext("2d");
     new Chart(ctx, {
-      type: 'pie',
+      type: "pie",
       data: {
-        labels: ['Short', 'Long'],
-        datasets: [{
-          data: [typesData.short, typesData.long],
-          backgroundColor: ['#007bff', '#28a745']
-        }]
+        labels: ["Short", "Long"],
+        datasets: [
+          {
+            data: [typesData.short, typesData.long],
+            backgroundColor: ["#007bff", "#28a745"],
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -249,27 +255,29 @@ document.addEventListener('DOMContentLoaded', function() {
         plugins: {
           title: {
             display: true,
-            text: 'Summary Types Distribution'
-          }
-        }
-      }
+            text: "Summary Types Distribution",
+          },
+        },
+      },
     });
   }
 
   function createTopDomainsChart(domainsData) {
     const domains = Object.keys(domainsData);
     const counts = Object.values(domainsData);
-    
-    const ctx = document.getElementById('userTopDomainsChart').getContext('2d');
+
+    const ctx = document.getElementById("userTopDomainsChart").getContext("2d");
     new Chart(ctx, {
-      type: 'bar',
+      type: "bar",
       data: {
         labels: domains,
-        datasets: [{
-          label: 'Summaries per Domain',
-          data: counts,
-          backgroundColor: '#007bff'
-        }]
+        datasets: [
+          {
+            label: "Summaries per Domain",
+            data: counts,
+            backgroundColor: "#007bff",
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -277,32 +285,36 @@ document.addEventListener('DOMContentLoaded', function() {
         plugins: {
           title: {
             display: true,
-            text: 'Top Domains'
-          }
-        }
-      }
+            text: "Top Domains",
+          },
+        },
+      },
     });
   }
 
   function createAiProvidersChart(providersData) {
     const providers = Object.keys(providersData);
     const counts = Object.values(providersData);
-    
-    const ctx = document.getElementById('userAiProvidersChart').getContext('2d');
+
+    const ctx = document
+      .getElementById("userAiProvidersChart")
+      .getContext("2d");
     new Chart(ctx, {
-      type: 'doughnut',
+      type: "doughnut",
       data: {
         labels: providers,
-        datasets: [{
-          data: counts,
-          backgroundColor: [
-            '#007bff',
-            '#28a745',
-            '#dc3545',
-            '#ffc107',
-            '#17a2b8'
-          ]
-        }]
+        datasets: [
+          {
+            data: counts,
+            backgroundColor: [
+              "#007bff",
+              "#28a745",
+              "#dc3545",
+              "#ffc107",
+              "#17a2b8",
+            ],
+          },
+        ],
       },
       options: {
         responsive: true,
@@ -310,10 +322,10 @@ document.addEventListener('DOMContentLoaded', function() {
         plugins: {
           title: {
             display: true,
-            text: 'AI Providers Usage'
-          }
-        }
-      }
+            text: "AI Providers Usage",
+          },
+        },
+      },
     });
   }
 
@@ -695,166 +707,185 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   }
-  
 
   async function fetchAndDisplayAnalytics() {
     try {
       // Clear any existing charts to prevent memory leaks
-      const charts = document.querySelectorAll('canvas');
-      charts.forEach(canvas => {
-        const ctx = canvas.getContext('2d');
+      const charts = document.querySelectorAll("canvas");
+      charts.forEach((canvas) => {
+        const ctx = canvas.getContext("2d");
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       });
-  
+
       const response = await fetch("http://localhost:3000/admin/analytics", {
         credentials: "include",
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to fetch analytics");
       }
-  
+
       const data = await response.json();
-      
+
       // Update user stats
       document.getElementById("total-users").textContent = data.userStats.total;
       document.getElementById("free-users").textContent = data.userStats.free;
       document.getElementById("basic-users").textContent = data.userStats.basic;
-      document.getElementById("premium-users").textContent = data.userStats.premium;
-  
+      document.getElementById("premium-users").textContent =
+        data.userStats.premium;
+
       // Create User Subscriptions Chart
-      const userSubscriptionsCtx = document.getElementById('userSubscriptionsChart').getContext('2d');
+      const userSubscriptionsCtx = document
+        .getElementById("userSubscriptionsChart")
+        .getContext("2d");
       new Chart(userSubscriptionsCtx, {
-        type: 'pie',
+        type: "pie",
         data: {
-          labels: ['Free', 'Basic', 'Premium'],
-          datasets: [{
-            data: [data.userStats.free, data.userStats.basic, data.userStats.premium],
-            backgroundColor: ['#ffc107', '#17a2b8', '#28a745']
-          }]
+          labels: ["Free", "Basic", "Premium"],
+          datasets: [
+            {
+              data: [
+                data.userStats.free,
+                data.userStats.basic,
+                data.userStats.premium,
+              ],
+              backgroundColor: ["#ffc107", "#17a2b8", "#28a745"],
+            },
+          ],
         },
         options: {
           responsive: true,
           plugins: {
             title: {
               display: true,
-              text: 'User Subscriptions'
+              text: "User Subscriptions",
             },
             legend: {
-              position: 'bottom'
-            }
-          }
-        }
+              position: "bottom",
+            },
+          },
+        },
       });
-  
+
       // Create Summary Types Chart
-      const summaryTypesCtx = document.getElementById('summaryTypesChart').getContext('2d');
+      const summaryTypesCtx = document
+        .getElementById("summaryTypesChart")
+        .getContext("2d");
       new Chart(summaryTypesCtx, {
-        type: 'pie',
+        type: "pie",
         data: {
-          labels: ['Short', 'Long'],
-          datasets: [{
-            data: [
-              data.summaryStats.types.short,
-              data.summaryStats.types.long
-            ],
-            backgroundColor: ['#007bff', '#6610f2']
-          }]
+          labels: ["Short", "Long"],
+          datasets: [
+            {
+              data: [
+                data.summaryStats.types.short,
+                data.summaryStats.types.long,
+              ],
+              backgroundColor: ["#007bff", "#6610f2"],
+            },
+          ],
         },
         options: {
           responsive: true,
           plugins: {
             title: {
               display: true,
-              text: 'Summary Types Distribution'
+              text: "Summary Types Distribution",
             },
             legend: {
-              position: 'bottom'
-            }
-          }
-        }
+              position: "bottom",
+            },
+          },
+        },
       });
-  
+
       // Create Daily Summaries Chart
       const dates = Object.keys(data.summaryStats.daily).sort();
-      const counts = dates.map(date => data.summaryStats.daily[date]);
-  
-      const dailySummariesCtx = document.getElementById('dailySummariesChart').getContext('2d');
+      const counts = dates.map((date) => data.summaryStats.daily[date]);
+
+      const dailySummariesCtx = document
+        .getElementById("dailySummariesChart")
+        .getContext("2d");
       new Chart(dailySummariesCtx, {
-        type: 'line',
+        type: "line",
         data: {
           labels: dates,
-          datasets: [{
-            label: 'Daily Summaries',
-            data: counts,
-            borderColor: '#007bff',
-            tension: 0.1,
-            fill: false
-          }]
+          datasets: [
+            {
+              label: "Daily Summaries",
+              data: counts,
+              borderColor: "#007bff",
+              tension: 0.1,
+              fill: false,
+            },
+          ],
         },
         options: {
           responsive: true,
           plugins: {
             title: {
               display: true,
-              text: 'Daily Summary Generation'
+              text: "Daily Summary Generation",
             },
             legend: {
-              display: false
-            }
+              display: false,
+            },
           },
           scales: {
             y: {
               beginAtZero: true,
               ticks: {
-                precision: 0
-              }
-            }
-          }
-        }
+                precision: 0,
+              },
+            },
+          },
+        },
       });
-  
+
       // Create Top Domains Chart
       const domains = Object.entries(data.summaryStats.domains)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10);
-  
-      const topDomainsCtx = document.getElementById('topDomainsChart').getContext('2d');
+
+      const topDomainsCtx = document
+        .getElementById("topDomainsChart")
+        .getContext("2d");
       new Chart(topDomainsCtx, {
-        type: 'bar',
+        type: "bar",
         data: {
-          labels: domains.map(d => d[0]),
-          datasets: [{
-            label: 'Summaries Generated',
-            data: domains.map(d => d[1]),
-            backgroundColor: '#20c997'
-          }]
+          labels: domains.map((d) => d[0]),
+          datasets: [
+            {
+              label: "Summaries Generated",
+              data: domains.map((d) => d[1]),
+              backgroundColor: "#20c997",
+            },
+          ],
         },
         options: {
           responsive: true,
           plugins: {
             title: {
               display: true,
-              text: 'Top 10 Domains'
+              text: "Top 10 Domains",
             },
             legend: {
-              display: false
-            }
+              display: false,
+            },
           },
           scales: {
             y: {
               beginAtZero: true,
               ticks: {
-                precision: 0
-              }
-            }
-          }
-        }
+                precision: 0,
+              },
+            },
+          },
+        },
       });
-  
     } catch (error) {
       console.error("Failed to fetch analytics:", error);
-      const analyticsContainer = document.querySelector('.analytics-container');
+      const analyticsContainer = document.querySelector(".analytics-container");
       if (analyticsContainer) {
         analyticsContainer.innerHTML = `
           <div class="empty-state">
@@ -864,8 +895,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     }
   }
-
-  
 
   function debounce(func, wait) {
     let timeout;
@@ -878,59 +907,120 @@ document.addEventListener('DOMContentLoaded', function() {
       timeout = setTimeout(later, wait);
     };
   }
-  
 
-    async function fetchPastSummaries(query = "") {
-      try {
-        const aiProvider = document.getElementById('ai-filter').value;
-        const endpoint = query
-          ? `http://localhost:3000/summaries/search?query=${encodeURIComponent(query)}&aiProvider=${aiProvider}`
-          : `http://localhost:3000/summaries/summaries?aiProvider=${aiProvider}`;
-    
-        const response = await fetch(endpoint, {
-          credentials: "include",
-        });
-    
-        if (!response.ok) {
-          throw new Error("Failed to fetch summaries");
-        }
-    
-        const summaries = await response.json();
-    
-        if (summaries.length === 0) {
-          pastSummariesList.innerHTML = `
+  // Update the pastSummariesList HTML generation in the fetchPastSummaries function
+  function fetchPastSummaries(query = "") {
+    try {
+      const endpoint = query
+        ? `http://localhost:3000/summaries/search?query=${encodeURIComponent(
+            query
+          )}`
+        : `http://localhost:3000/summaries/summaries`;
+
+      fetch(endpoint, {
+        credentials: "include",
+      })
+        .then((response) => response.json())
+        .then((summaries) => {
+          if (summaries.length === 0) {
+            pastSummariesList.innerHTML = `
             <div class="empty-state">
               <p>No summaries found.</p>
               <button id="generate-new">Generate a new summary</button>
             </div>
           `;
-    
-          document.getElementById("generate-new")?.addEventListener("click", () => {
-            chrome.runtime.sendMessage({ action: "openPopup" });
-          });
-    
-          return;
-        }
-    
-        pastSummariesList.innerHTML = summaries
-          .map((summary) => {
-            let domain = "Unknown Domain";
-            try {
-              if (summary.url && isValidUrl(summary.url)) {
-                domain = new URL(summary.url).hostname;
+
+            document
+              .getElementById("generate-new")
+              ?.addEventListener("click", () => {
+                chrome.runtime.sendMessage({ action: "openPopup" });
+              });
+            return;
+          }
+
+          pastSummariesList.innerHTML = summaries
+            .map((summary) => {
+              let domain = "Unknown Domain";
+              try {
+                if (summary.url && isValidUrl(summary.url)) {
+                  domain = new URL(summary.url).hostname;
+                }
+              } catch (error) {
+                console.error("Invalid URL:", summary.url, error);
               }
-            } catch (error) {
-              console.error("Invalid URL:", summary.url, error);
-            }
-    
-            return `
-              <div class="summary-card">
+
+              return `
+              <div class="summary-card" data-url="${summary.url}">
                 <div class="summary-header">
-                  <div class="summary-title">${summary.tags[0]?.name || "Untitled"}</div>
-                  <div class="ai-provider-badge">${summary.aiProvider || "gemini"}</div>
+                  <div class="summary-title">${
+                    summary.tags[0]?.name || "Untitled"
+                  }</div>
+                  <div class="summary-domain">${summary.domain || domain}</div>
                 </div>
-                <div class="summary-domain">${summary.domain || domain}</div>
-                <div class="summary-text">${summary.shortSummary || summary.longSummary}</div>
+                
+                <div class="ai-provider-info">
+                  ${
+                    summary.aiProvider_short
+                      ? `Short summary by ${summary.aiProvider_short}`
+                      : ""
+                  }
+                  ${
+                    summary.aiProvider_long
+                      ? `${
+                          summary.aiProvider_short ? "<br>" : ""
+                        }Long summary by ${summary.aiProvider_long}`
+                      : ""
+                  }
+                </div>
+
+                <div class="summary-actions">
+                  ${
+                    summary.shortSummary
+                      ? `<button class="action-button view-button" data-type="short" data-summary="${encodeURIComponent(
+                          summary.shortSummary
+                        )}">
+                          <i class="bi bi-eye"></i> View Short
+                         </button>`
+                      : ""
+                  }
+                  ${
+                    summary.longSummary
+                      ? `<button class="action-button view-button" data-type="long" data-summary="${encodeURIComponent(
+                          summary.longSummary
+                        )}">
+                          <i class="bi bi-eye"></i> View Long
+                         </button>`
+                      : ""
+                  }
+                </div>
+
+                <div class="summary-content" id="summary-content-${
+                  summary._id
+                }"></div>
+
+                <div class="summary-actions" id="download-actions-${
+                  summary._id
+                }" style="display: none;">
+                  ${
+                    summary.shortSummary
+                      ? `<button class="action-button download-button" data-type="short" data-url="${encodeURIComponent(
+                          summary.url
+                        )}">
+                          <i class="bi bi-download"></i> Download Short
+                         </button>`
+                      : ""
+                  }
+                  ${
+                    summary.longSummary
+                      ? `<button class="action-button download-button" data-type="long" data-url="${encodeURIComponent(
+                          summary.url
+                        )}">
+                          <i class="bi bi-download"></i> Download Long
+                         </button>`
+                      : ""
+                  }
+                </div>
+
                 <div class="summary-tags">
                   ${summary.tags
                     .map(
@@ -939,43 +1029,119 @@ document.addEventListener('DOMContentLoaded', function() {
                     )
                     .join("")}
                 </div>
-                <div class="summary-actions">
-                  <a href="${summary.url}" target="_blank" class="action-button view-button">View Article</a>
-                  <button class="action-button download-button" data-url="${summary.url}" data-type="short">Download Short</button>
-                  <button class="action-button download-button" data-url="${summary.url}" data-type="long">Download Long</button>
-                </div>
               </div>
             `;
-          })
-          .join("");
-    
-        document.querySelectorAll(".tag").forEach((tag) => {
-          tag.addEventListener("click", () => {
-            searchBar.value = tag.dataset.tag;
-            fetchPastSummaries(tag.dataset.tag);
+            })
+            .join("");
+
+          // Add event listeners for view buttons
+          document.querySelectorAll(".view-button").forEach((button) => {
+            button.addEventListener("click", (e) => {
+              const card = e.target.closest(".summary-card");
+              const summaryContent = card.querySelector(".summary-content");
+              const downloadActions = card.querySelector(
+                `[id^="download-actions-"]`
+              );
+              const type = e.target.dataset.type;
+              const summary = decodeURIComponent(e.target.dataset.summary);
+
+              // Close any other open summaries
+              document
+                .querySelectorAll(".summary-content")
+                .forEach((content) => {
+                  if (content !== summaryContent) {
+                    content.style.display = "none";
+                    content.textContent = "";
+                  }
+                });
+              document
+                .querySelectorAll(`[id^="download-actions-"]`)
+                .forEach((actions) => {
+                  if (actions !== downloadActions) {
+                    actions.style.display = "none";
+                  }
+                });
+
+              // Toggle current summary
+              if (summaryContent.style.display === "block") {
+                summaryContent.style.display = "none";
+                summaryContent.textContent = "";
+                downloadActions.style.display = "none";
+                e.target.innerHTML = `<i class="bi bi-eye"></i> View ${
+                  type.charAt(0).toUpperCase() + type.slice(1)
+                }`;
+              } else {
+                summaryContent.style.display = "block";
+                summaryContent.textContent = summary;
+                downloadActions.style.display = "flex";
+                e.target.innerHTML = `<i class="bi bi-eye-slash"></i> Hide ${
+                  type.charAt(0).toUpperCase() + type.slice(1)
+                }`;
+              }
+            });
           });
-        });
-    
-        document.querySelectorAll(".download-button").forEach((button) => {
-          button.addEventListener("click", () => {
-            downloadSummary(button.dataset.url, button.dataset.type);
+
+          // Add event listeners for download buttons
+          document.querySelectorAll(".download-button").forEach((button) => {
+            button.addEventListener("click", async (e) => {
+              const type = e.target.dataset.type;
+              const url = decodeURIComponent(e.target.dataset.url);
+
+              try {
+                const response = await fetch(
+                  `http://localhost:3000/summaries/download?url=${encodeURIComponent(
+                    url
+                  )}&type=${type}`,
+                  {
+                    credentials: "include",
+                  }
+                );
+
+                if (!response.ok) {
+                  throw new Error("Failed to download summary");
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = downloadUrl;
+                a.download = `${type}-summary.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+              } catch (error) {
+                console.error("Download error:", error);
+                alert("Failed to download summary. Please try again.");
+              }
+            });
           });
-        });
-      } catch (error) {
-        console.error("Failed to fetch summaries:", error);
-        pastSummariesList.innerHTML = `
+
+          // Add event listeners for tags
+          document.querySelectorAll(".tag").forEach((tag) => {
+            tag.addEventListener("click", () => {
+              searchBar.value = tag.dataset.tag;
+              fetchPastSummaries(tag.dataset.tag);
+            });
+          });
+        })
+        .catch((error) => {
+          console.error("Failed to fetch summaries:", error);
+          pastSummariesList.innerHTML = `
           <div class="empty-state">
             <p>Error loading summaries. Please try again.</p>
           </div>
         `;
-      }
+        });
+    } catch (error) {
+      console.error("Failed to fetch summaries:", error);
+      pastSummariesList.innerHTML = `
+      <div class="empty-state">
+        <p>Error loading summaries. Please try again.</p>
+      </div>
+    `;
     }
-    
-    // Add event listener for AI provider filter
-    aiFilter.addEventListener("change", () => {
-      fetchPastSummaries(searchBar.value);
-    });
-  
+  }
 
   // Helper function to validate URLs
   function isValidUrl(url) {
@@ -1288,50 +1454,63 @@ document.addEventListener('DOMContentLoaded', function() {
     document.body.appendChild(modalContainer);
 
     // Handle generate button click
-    document.getElementById("generate-summary-btn").addEventListener("click", async () => {
-      try {
-        modalContent.innerHTML = `
+    document
+      .getElementById("generate-summary-btn")
+      .addEventListener("click", async () => {
+        try {
+          modalContent.innerHTML = `
           <div class="loader" style="display: block;">
             <div class="spinner"></div>
             <p>Generating summary...</p>
           </div>
         `;
 
-        const response = await fetch(`http://localhost:3000/summarize/generate?url=${encodeURIComponent(url)}&type=${type}`, {
-          method: 'GET',
-          credentials: "include",
-        });
+          const response = await fetch(
+            `http://localhost:3000/summarize/generate?url=${encodeURIComponent(
+              url
+            )}&type=${type}`,
+            {
+              method: "GET",
+              credentials: "include",
+            }
+          );
 
-        if (!response.ok) {
-          throw new Error(`Failed to generate summary: ${response.statusText}`);
-        }
+          if (!response.ok) {
+            throw new Error(
+              `Failed to generate summary: ${response.statusText}`
+            );
+          }
 
-        const data = await response.json();
-        
-        if (data.response) {
-          // After successful generation, try downloading again
-          document.body.removeChild(modalContainer);
-          downloadSummary(url, type);
-        } else {
-          throw new Error("Generated summary is empty");
-        }
-      } catch (error) {
-        console.error("Error generating summary:", error);
-        modalContent.innerHTML = `
+          const data = await response.json();
+
+          if (data.response) {
+            // After successful generation, try downloading again
+            document.body.removeChild(modalContainer);
+            downloadSummary(url, type);
+          } else {
+            throw new Error("Generated summary is empty");
+          }
+        } catch (error) {
+          console.error("Error generating summary:", error);
+          modalContent.innerHTML = `
           <h3 style="margin-bottom: 15px">Error</h3>
           <p style="margin-bottom: 20px">Failed to generate summary. Please try again.</p>
           <button id="close-error-btn" class="action-button" style="background-color: #6c757d;">Close</button>
         `;
-        document.getElementById("close-error-btn").addEventListener("click", () => {
-          document.body.removeChild(modalContainer);
-        });
-      }
-    });
+          document
+            .getElementById("close-error-btn")
+            .addEventListener("click", () => {
+              document.body.removeChild(modalContainer);
+            });
+        }
+      });
 
     // Handle cancel button click
-    document.getElementById("cancel-generate-btn").addEventListener("click", () => {
-      document.body.removeChild(modalContainer);
-    });
+    document
+      .getElementById("cancel-generate-btn")
+      .addEventListener("click", () => {
+        document.body.removeChild(modalContainer);
+      });
 
     // Close modal when clicking outside
     modalContainer.addEventListener("click", (e) => {
@@ -1341,7 +1520,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-
   function showError(message) {
     const errorDiv = document.createElement("div");
     errorDiv.className = "error-message";
@@ -1350,12 +1528,10 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => errorDiv.remove(), 5000);
   }
 
-  if(profileContent.classList.contains('active')){
+  if (profileContent.classList.contains("active")) {
     loadUserAnalytics();
   }
 
-
-  
   // Remove the automatic file input click
   paymentLink.addEventListener("click", () => {
     setActiveSection(paymentLink, paymentContent);

@@ -15,24 +15,22 @@ const GROQ_MODELS = {
   mixtral: "mixtral-8x7b-32768",
 };
 
-const { pipeline } = require('@xenova/transformers');
+const { pipeline } = require("@xenova/transformers");
 
 let t5Summarizer;
 
 async function loadModel() {
-    try {
-        console.log("Loading T5 model...");
-        t5Summarizer = await pipeline("summarization", "t5-small");
-        console.log("T5 model loaded successfully!");
-    } catch (error) {
-        console.error("Failed to load T5 model:", error);
-        // Exit the process if the model fails to load
-        process.exit(1);
-    }
+  try {
+    console.log("Loading T5 model...");
+    t5Summarizer = await pipeline("summarization", "t5-small");
+    console.log("T5 model loaded successfully!");
+  } catch (error) {
+    console.error("Failed to load T5 model:", error);
+    process.exit(1);
+  }
 }
 
 loadModel();
-
 
 function truncateText(text, maxTokens = 30000) {
   return text.split(" ").slice(0, maxTokens).join(" ");
@@ -107,8 +105,6 @@ async function generateSummaryWithT5(text, type) {
 
   try {
     const result = await model.generateContent(prompt);
-
-    // Log entire response object
     console.log("Google T5 API Response:", result);
 
     if (!result || !result.response) {
@@ -116,7 +112,7 @@ async function generateSummaryWithT5(text, type) {
     }
 
     const summary = await result.response.text();
-    
+
     if (!summary) {
       throw new Error("T5 API returned an empty summary");
     }
@@ -125,11 +121,8 @@ async function generateSummaryWithT5(text, type) {
   } catch (error) {
     console.error("Google T5 Error:", error.message);
     throw new Error("Failed to generate summary with Google T5");
-
   }
 }
-
-
 
 async function generateTags(text, userId) {
   try {
@@ -176,36 +169,29 @@ async function summarise(req, res) {
       save,
       aiProvider = "gemini",
     } = req.body;
-    console.log("Selected AI Provider:", aiProvider);
 
-    const restrictedDomains = ['youtube.com', 'netflix.com', 'hulu.com', 'amazon.com/video'];
+    const restrictedDomains = [
+      "youtube.com",
+      "netflix.com",
+      "hulu.com",
+      "amazon.com/video",
+    ];
     const urlObj = new URL(url);
-    const isDomainRestricted = restrictedDomains.some(domain => urlObj.hostname.includes(domain));
-    
+    const isDomainRestricted = restrictedDomains.some((domain) =>
+      urlObj.hostname.includes(domain)
+    );
+
     if (isDomainRestricted) {
-        return res.status(403).json({ 
-            error: "This extension doesn't work on streaming/video websites",
-            isRestricted: true
-        });
+      return res.status(403).json({
+        error: "This extension doesn't work on streaming/video websites",
+        isRestricted: true,
+      });
     }
 
     const isFileSummary = url.startsWith("file-");
     if (!isFileSummary && !isValidUrl(url)) {
       console.error("Invalid URL:", url);
       return res.status(400).json({ error: "Invalid URL" });
-    }
-
-    // Check if summary exists with the requested provider
-    let existingSummary = await Summary.findOne({
-      url,
-      user: req.user._id,
-    }).populate("tags");
-
-    if (existingSummary) {
-      const summaryField = `${type}Summary_${aiProvider}`;
-      if (existingSummary[summaryField]) {
-        return res.json({ response: existingSummary[summaryField] });
-      }
     }
 
     let generatedSummary;
@@ -224,11 +210,9 @@ async function summarise(req, res) {
           type,
           aiProvider
         );
-      } 
-      else if(aiProvider === "t5") {
+      } else if (aiProvider === "t5") {
         generatedSummary = await generateSummaryWithT5(text, type);
-      }
-      else {
+      } else {
         throw new Error(`Invalid AI provider: ${aiProvider}`);
       }
     } catch (error) {
@@ -240,47 +224,89 @@ async function summarise(req, res) {
     }
 
     if (save) {
-      if (!existingSummary) {
+      try {
+        // Find existing summary
+        let existingSummary = await Summary.findOne({
+          url,
+          user: req.user._id,
+        });
+
         const tagIds = await generateTags(text, req.user._id);
 
-        // Create new summary document with provider-specific fields
-        const summaryData = {
-          user: req.user._id,
+        if (existingSummary) {
+          // Update existing summary
+          existingSummary.text = text;
+          existingSummary.domain = domain;
+          existingSummary.title = title;
+          existingSummary.lastAccessed = new Date();
+          existingSummary.tags = tagIds;
+
+          // Update the appropriate summary field and AI provider based on type
+          if (type === "short") {
+            existingSummary.shortSummary = generatedSummary;
+            existingSummary.aiProvider_short = aiProvider;
+          } else {
+            existingSummary.longSummary = generatedSummary;
+            existingSummary.aiProvider_long = aiProvider;
+          }
+
+          await existingSummary.save();
+        } else {
+          // Create new summary
+          const summaryData = {
+            user: req.user._id,
+            url,
+            domain,
+            title,
+            text,
+            lastAccessed: new Date(),
+            tags: tagIds,
+          };
+
+          // Set the appropriate summary field and AI provider based on type
+          if (type === "short") {
+            summaryData.shortSummary = generatedSummary;
+            summaryData.aiProvider_short = aiProvider;
+          } else {
+            summaryData.longSummary = generatedSummary;
+            summaryData.aiProvider_long = aiProvider;
+          }
+
+          existingSummary = new Summary(summaryData);
+          await existingSummary.save();
+        }
+
+        // Update user's summary count and history
+        const summaryHistoryEntry = {
+          timestamp: new Date(),
+          type,
           url,
-          domain: typeof domain === "string" ? domain : String(domain),
-          title: typeof title === "string" ? title : String(title),
-          text,
-          shortSummary: type === "short" ? generatedSummary : "",
-          longSummary: type === "long" ? generatedSummary : "",
-          aiProvider,
-          lastAccessed: new Date(),
-          tags: tagIds,
+          domain,
         };
 
-        // Add the summary to the correct provider field
-        summaryData[`${type}Summary_${aiProvider}`] = generatedSummary;
-
-        existingSummary = new Summary(summaryData);
-      } else {
-        // Update the correct provider field
-        const summaryField = `${type}Summary_${aiProvider}`;
-        existingSummary[summaryField] = generatedSummary;
-        existingSummary.lastAccessed = new Date();
-      }
-      await existingSummary.save();
-
-      const totalSummaries = await Summary.countDocuments({
-        user: req.user._id,
-      });
-      if (totalSummaries > 100) {
-        const leastUsedRecord = await Summary.findOne({
-          user: req.user._id,
-        }).sort({
-          lastAccessed: 1,
+        await User.findByIdAndUpdate(req.user._id, {
+          $inc: { summaryCount: 1 },
+          $push: { summaryHistory: summaryHistoryEntry },
         });
-        if (leastUsedRecord) {
-          await Summary.findByIdAndDelete(leastUsedRecord._id);
+
+        // Clean up old summaries if limit reached
+        const totalSummaries = await Summary.countDocuments({
+          user: req.user._id,
+        });
+
+        if (totalSummaries > 100) {
+          const leastUsedRecord = await Summary.findOne({
+            user: req.user._id,
+          }).sort({
+            lastAccessed: 1,
+          });
+          if (leastUsedRecord) {
+            await Summary.findByIdAndDelete(leastUsedRecord._id);
+          }
         }
+      } catch (error) {
+        console.error("Error saving summary:", error);
+        return res.status(500).json({ error: "Error saving summary" });
       }
     }
 
@@ -290,128 +316,5 @@ async function summarise(req, res) {
     res.status(500).json({ error: "Error fetching summary" });
   }
 }
-
-/*
-async function summarise(req, res) {
-  try {
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    const {
-      text,
-      type,
-      url,
-      domain,
-      title,
-      save,
-      aiProvider = "gemini",
-    } = req.body;
-
-    const isFileSummary = url.startsWith("file-");
-    if (!isFileSummary && !isValidUrl(url)) {
-      console.error("Invalid URL:", url);
-      return res.status(400).json({ error: "Invalid URL" });
-    }
-
-    // Check if summary exists with the requested provider
-    let existingSummary = await Summary.findOne({
-      url,
-      user: req.user._id,
-    }).populate("tags");
-
-    if (existingSummary) {
-      const summaryField = `${type}Summary_${aiProvider}`;
-      if (existingSummary[summaryField]) {
-        return res.json({ response: existingSummary[summaryField] });
-      }
-    }
-
-    let generatedSummary;
-    try {
-      switch (aiProvider.toLowerCase()) {
-          case "gemini":
-              if (!API_KEY) {
-                  throw new Error("Gemini API key not configured");
-              }
-              generatedSummary = await generateSummaryWithGemini(text, type);
-              break;
-          case "t5":
-              generatedSummary = await generateSummaryWithT5(text, type);
-              break;
-          default:
-              throw new Error("Invalid AI provider selected");
-
-      }
-
-
-      const summaryHistoryEntry = {
-        timestamp: new Date(),
-        type,
-        url,
-        domain: domain || urlObj.hostname
-    };
-    
-    await User.findByIdAndUpdate(req.user._id, {
-        $inc: { summaryCount: 1 },
-        $push: { summaryHistory: summaryHistoryEntry }
-    });
-
-    } catch (error) {
-      console.error(`${aiProvider} API Error:`, error);
-      return res.status(500).json({
-        error: `Failed to generate summary with ${aiProvider}. Falling back to Gemini.`,
-        fallback: true,
-      });
-    }
-
-    if (save) {
-      if (!existingSummary) {
-        const tagIds = await generateTags(text, req.user._id);
-
-        // Create new summary document with provider-specific fields
-        const summaryData = {
-          user: req.user._id,
-          url,
-          domain: typeof domain === "string" ? domain : String(domain),
-          title: typeof title === "string" ? title : String(title),
-          text,
-          lastAccessed: new Date(),
-          tags: tagIds,
-        };
-
-        // Add the summary to the correct provider field
-        summaryData[`${type}Summary_${aiProvider}`] = generatedSummary;
-
-        existingSummary = new Summary(summaryData);
-      } else {
-        // Update the correct provider field
-        const summaryField = `${type}Summary_${aiProvider}`;
-        existingSummary[summaryField] = generatedSummary;
-        existingSummary.lastAccessed = new Date();
-      }
-      await existingSummary.save();
-
-      const totalSummaries = await Summary.countDocuments({
-        user: req.user._id,
-      });
-      if (totalSummaries > 100) {
-        const leastUsedRecord = await Summary.findOne({
-          user: req.user._id,
-        }).sort({
-          lastAccessed: 1,
-        });
-        if (leastUsedRecord) {
-          await Summary.findByIdAndDelete(leastUsedRecord._id);
-        }
-      }
-    }
-
-    res.json({ response: generatedSummary });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ error: "Error fetching summary" });
-  }
-}*/
 
 module.exports = summarise;
