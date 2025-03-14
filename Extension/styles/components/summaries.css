@@ -1,0 +1,117 @@
+/* Summaries Styles */
+.summaries-list {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.summary-card {
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid #eaeaea;
+  position: relative;
+  overflow: hidden;
+}
+
+.summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.summary-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #007bff, #00d2ff);
+  border-radius: 4px 0 0 4px;
+}
+
+.summary-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eaeaea;
+  margin-bottom: 16px;
+}
+
+.summary-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.4;
+}
+
+.summary-domain {
+  font-size: 14px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f8f9fa;
+  padding: 8px 12px;
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.summary-domain::before {
+  content: "🌐";
+  font-size: 14px;
+}
+
+.ai-provider-info {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.5;
+  border: 1px solid #eaeaea;
+  margin: 16px 0;
+}
+
+.ai-provider-info div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.summary-content {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333;
+  border: 1px solid #eaeaea;
+  max-height: 400px;
+  overflow-y: auto;
+  display: none;
+  transition: all 0.3s ease;
+}
+
+.summary-content.hidden {
+  display: none;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .summaries-list {
+    padding: 16px;
+  }
+
+  .summary-card {
+    padding: 16px;
+  }
+}

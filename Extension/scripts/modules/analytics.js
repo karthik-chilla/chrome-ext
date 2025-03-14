@@ -2,7 +2,7 @@
 let charts = {};
 
 function destroyCharts() {
-  Object.values(charts).forEach(chart => {
+  Object.values(charts).forEach((chart) => {
     if (chart) {
       chart.destroy();
     }
@@ -15,12 +15,18 @@ export async function loadUserAnalytics() {
     // Destroy existing charts first
     destroyCharts();
 
+    // Fetch user analytics
     const response = await fetch(
       "http://localhost:3000/summarize/user-analytics",
       {
         credentials: "include",
       }
     );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch analytics");
+    }
+
     const data = await response.json();
 
     // Update stats
@@ -28,7 +34,8 @@ export async function loadUserAnalytics() {
       data.totalSummaries;
     document.getElementById("user-today-summaries").textContent =
       data.todaySummaries;
-    document.getElementById("user-favorite-ai").textContent = data.favoriteAi;
+    document.getElementById("user-favorite-ai").textContent =
+      data.favoriteAi || "None";
 
     // Create charts
     createDailySummariesChart(data.dailySummaries);
@@ -37,24 +44,44 @@ export async function loadUserAnalytics() {
     createAiProvidersChart(data.aiProviders);
   } catch (error) {
     console.error("Error loading analytics:", error);
+    // Clear any existing charts on error
+    destroyCharts();
+
+    // Show error message in chart containers
+    const chartContainers = document.querySelectorAll(".chart-container");
+    chartContainers.forEach((container) => {
+      container.innerHTML = `
+        <div class="chart-error">
+          <p>Error loading chart data. Please try again.</p>
+        </div>
+      `;
+    });
   }
 }
 
-export function createDailySummariesChart(dailyData) {
-  const ctx = document
-    .getElementById("userDailySummariesChart")
-    .getContext("2d");
-  
+function createDailySummariesChart(dailyData) {
+  const canvas = document.getElementById("userDailySummariesChart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  if (charts.dailySummaries) {
+    charts.dailySummaries.destroy();
+  }
+
+  const dates = Object.keys(dailyData).sort();
+  const counts = dates.map((date) => dailyData[date]);
+
   charts.dailySummaries = new Chart(ctx, {
     type: "line",
     data: {
-      labels: Object.keys(dailyData),
+      labels: dates,
       datasets: [
         {
           label: "Daily Summaries",
-          data: Object.values(dailyData),
+          data: counts,
           borderColor: "#007bff",
           tension: 0.1,
+          fill: false,
         },
       ],
     },
@@ -66,20 +93,38 @@ export function createDailySummariesChart(dailyData) {
           display: true,
           text: "Daily Summary Activity",
         },
+        legend: {
+          display: false,
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0,
+          },
+        },
       },
     },
   });
 }
 
-export function createSummaryTypesChart(typesData) {
-  const ctx = document.getElementById("userSummaryTypesChart").getContext("2d");
+function createSummaryTypesChart(typesData) {
+  const canvas = document.getElementById("userSummaryTypesChart");
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  if (charts.summaryTypes) {
+    charts.summaryTypes.destroy();
+  }
+
   charts.summaryTypes = new Chart(ctx, {
     type: "pie",
     data: {
       labels: ["Short", "Long"],
       datasets: [
         {
-          data: [typesData.short, typesData.long],
+          data: [typesData.short || 0, typesData.long || 0],
           backgroundColor: ["#007bff", "#28a745"],
         },
       ],
@@ -97,19 +142,27 @@ export function createSummaryTypesChart(typesData) {
   });
 }
 
-export function createTopDomainsChart(domainsData) {
-  const domains = Object.keys(domainsData);
-  const counts = Object.values(domainsData);
+function createTopDomainsChart(domainsData) {
+  const canvas = document.getElementById("userTopDomainsChart");
+  if (!canvas) return;
 
-  const ctx = document.getElementById("userTopDomainsChart").getContext("2d");
+  const ctx = canvas.getContext("2d");
+  if (charts.topDomains) {
+    charts.topDomains.destroy();
+  }
+
+  const domains = Object.entries(domainsData)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10);
+
   charts.topDomains = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: domains,
+      labels: domains.map((d) => d[0]),
       datasets: [
         {
           label: "Summaries per Domain",
-          data: counts,
+          data: domains.map((d) => d[1]),
           backgroundColor: "#007bff",
         },
       ],
@@ -122,23 +175,40 @@ export function createTopDomainsChart(domainsData) {
           display: true,
           text: "Top Domains",
         },
+        legend: {
+          display: false,
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0,
+          },
+        },
       },
     },
   });
 }
 
-export function createAiProvidersChart(providersData) {
-  const providers = Object.keys(providersData);
-  const counts = Object.values(providersData);
+function createAiProvidersChart(providersData) {
+  const canvas = document.getElementById("userAiProvidersChart");
+  if (!canvas) return;
 
-  const ctx = document.getElementById("userAiProvidersChart").getContext("2d");
+  const ctx = canvas.getContext("2d");
+  if (charts.aiProviders) {
+    charts.aiProviders.destroy();
+  }
+
+  const providers = Object.entries(providersData).sort((a, b) => b[1] - a[1]);
+
   charts.aiProviders = new Chart(ctx, {
     type: "doughnut",
     data: {
-      labels: providers,
+      labels: providers.map((p) => p[0]),
       datasets: [
         {
-          data: counts,
+          data: providers.map((p) => p[1]),
           backgroundColor: [
             "#007bff",
             "#28a745",

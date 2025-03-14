@@ -22,7 +22,7 @@ let t5Summarizer;
 async function loadModel() {
   try {
     console.log("Loading T5 model...");
-    t5Summarizer = await pipeline("summarization", "t5-small");
+    t5Summarizer = await pipeline("summarization", "Xenova/t5-small");
     console.log("T5 model loaded successfully!");
   } catch (error) {
     console.error("Failed to load T5 model:", error);
@@ -97,30 +97,29 @@ async function generateSummaryWithGroq(text, type, modelType) {
 }
 
 async function generateSummaryWithT5(text, type) {
-  console.log("Generating summary using Google T5...");
-
-  const prompt = `Summarize the following content in ${
-    type === "short" ? "1-2 sentences" : "2-3 paragraphs"
-  }:\n\n${truncateText(text)}`;
-
   try {
-    const result = await model.generateContent(prompt);
-    console.log("Google T5 API Response:", result);
+    console.log("Generating summary using T5...");
 
-    if (!result || !result.response) {
-      throw new Error("T5 API returned an invalid response");
+    // Truncate text to T5's max input length (512 tokens ≈ 1000 words)
+    const truncatedText = text.split(" ").slice(0, 1000).join(" ");
+
+    // Generate summary with T5
+    const result = await t5Summarizer(truncatedText, {
+      max_length: type === "short" ? 30 : 150,
+      min_length: type === "short" ? 10 : 50,
+      length_penalty: 2.0,
+      num_beams: 4,
+      early_stopping: true,
+    });
+
+    if (!result || !result[0]?.summary_text) {
+      throw new Error("T5 model failed to generate a summary");
     }
 
-    const summary = await result.response.text();
-
-    if (!summary) {
-      throw new Error("T5 API returned an empty summary");
-    }
-
-    return summary;
+    return result[0].summary_text;
   } catch (error) {
-    console.error("Google T5 Error:", error.message);
-    throw new Error("Failed to generate summary with Google T5");
+    console.error("T5 Error:", error.message);
+    throw new Error("Failed to generate summary with T5");
   }
 }
 
@@ -170,19 +169,18 @@ async function summarise(req, res) {
       aiProvider = "gemini",
     } = req.body;
 
-    
-    /*
-    const isFileSummary = url.startsWith("file-");
-    if (!isFileSummary && !isValidUrl(url)) {
-      console.error("Invalid URL:", url);
-      return res.status(400).json({ error: "Invalid URL" });
-    }*/
-    
-    
+    // Handle file summaries
     const isFileSummary = url.startsWith("file-summary-");
-
-    // Skip URL validation for file summaries
-    if (!isFileSummary) {
+    if (isFileSummary) {
+      // Check subscription for file summaries
+      if (req.user.subscription === "free" && req.user.role !== "super_admin") {
+        return res.status(403).json({
+          error: "Upgrade to Premium for file summaries",
+          redirectTo: "payment",
+        });
+      }
+    } else {
+      // Check URL restrictions for web summaries
       const restrictedDomains = [
         "youtube.com",
         "netflix.com",
@@ -208,15 +206,16 @@ async function summarise(req, res) {
       }
     }
 
-
-
     let generatedSummary;
     try {
-      if (aiProvider === "gemini") {
+      // Always use Gemini for file summaries
+      if (isFileSummary || aiProvider === "gemini") {
         if (!API_KEY) {
           throw new Error("Gemini API key not configured");
         }
         generatedSummary = await generateSummaryWithGemini(text, type);
+      } else if (aiProvider === "t5") {
+        generatedSummary = await generateSummaryWithT5(text, type);
       } else if (Object.keys(GROQ_MODELS).includes(aiProvider)) {
         if (!GROQ_API_KEY) {
           throw new Error("Groq API key not configured");
@@ -226,8 +225,6 @@ async function summarise(req, res) {
           type,
           aiProvider
         );
-      } else if (aiProvider === "t5") {
-        generatedSummary = await generateSummaryWithT5(text, type);
       } else {
         throw new Error(`Invalid AI provider: ${aiProvider}`);
       }
@@ -240,7 +237,7 @@ async function summarise(req, res) {
     }
     console.log("Generated Summary:", generatedSummary); // Log the generated summary
 
-    if (save) {
+    if (save && !isFileSummary) {
       try {
         // Find existing summary
         let existingSummary = await Summary.findOne({
@@ -279,7 +276,7 @@ async function summarise(req, res) {
             text,
             lastAccessed: new Date(),
             tags: tagIds,
-            isSaved: true
+            isSaved: true,
           };
 
           // Set the appropriate summary field and AI provider based on type
@@ -337,5 +334,3 @@ async function summarise(req, res) {
 }
 
 module.exports = summarise;
-
-
