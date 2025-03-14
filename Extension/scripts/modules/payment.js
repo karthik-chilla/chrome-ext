@@ -20,10 +20,10 @@ export async function fetchPlans() {
     // Hide payment content if user is super_admin
     if (profile.role === "super_admin") {
       document.getElementById("payment-content").innerHTML = `
-          <div class="empty-state">
-            <p>As a Super Admin, you automatically have access to all premium features.</p>
-          </div>
-        `;
+        <div class="empty-state">
+          <p>As a Super Admin, you automatically have access to all premium features.</p>
+        </div>
+      `;
       return;
     }
 
@@ -36,21 +36,21 @@ export async function fetchPlans() {
     plansContainer.innerHTML = availablePlans
       .map(
         (plan) => `
-          <div class="plan-card ${
-            profile.subscription === plan.id ? "current-plan" : ""
-          }">
-            <div class="plan-name">${plan.name}</div>
-            <div class="plan-price">$${plan.price}/month</div>
-            <ul class="plan-features">
-              ${plan.features.map((feature) => `<li>${feature}</li>`).join("")}
-            </ul>
-            ${
-              profile.subscription !== plan.id
-                ? `<button class="subscribe-button" data-plan="${plan.id}">Subscribe</button>`
-                : ""
-            }
-          </div>
-        `
+        <div class="plan-card ${
+          profile.subscription === plan.id ? "current-plan" : ""
+        }">
+          <div class="plan-name">${plan.name}</div>
+          <div class="plan-price">$${plan.price}/month</div>
+          <ul class="plan-features">
+            ${plan.features.map((feature) => `<li>${feature}</li>`).join("")}
+          </ul>
+          ${
+            profile.subscription !== plan.id
+              ? `<button class="subscribe-button" data-plan="${plan.id}">Subscribe</button>`
+              : ""
+          }
+        </div>
+      `
       )
       .join("");
 
@@ -58,10 +58,10 @@ export async function fetchPlans() {
   } catch (error) {
     console.error("Failed to fetch plans:", error);
     plansContainer.innerHTML = `
-        <div class="empty-state">
-          <p>Error loading subscription plans. Please try again.</p>
-        </div>
-      `;
+      <div class="empty-state">
+        <p>Error loading subscription plans. Please try again.</p>
+      </div>
+    `;
   }
 }
 
@@ -149,10 +149,10 @@ export async function fetchPaymentHistory() {
 
     if (!data.paymentHistory || data.paymentHistory.length === 0) {
       paymentHistory.innerHTML = `
-          <div class="empty-state">
-            <p>No payment history found.</p>
-          </div>
-        `;
+        <div class="empty-state">
+          <p>No payment history found.</p>
+        </div>
+      `;
       return;
     }
 
@@ -178,9 +178,9 @@ export async function fetchPaymentHistory() {
   } catch (error) {
     console.error("Failed to fetch payment history:", error);
     paymentHistory.innerHTML = `
-        <div class="empty-state">
-          <p>Error loading payment history. Please try again.</p>
-        </div>
-      `;
+      <div class="empty-state">
+        <p>Error loading payment history. Please try again.</p>
+      </div>
+    `;
   }
 }

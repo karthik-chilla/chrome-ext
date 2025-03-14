@@ -33,6 +33,19 @@ document.addEventListener("DOMContentLoaded", function () {
     dropdownContent.style.display = "none";
   });
 
+  // Clear summary when AI provider changes
+  aiProviderSelect.addEventListener("change", function () {
+    // Clear the summary
+    summary.textContent = "Summary will be generated here.";
+    // Remove save button if it exists
+    const existingSaveButton = document.querySelector(".save-button");
+    if (existingSaveButton) {
+      existingSaveButton.remove();
+    }
+    // Reset current summary data
+    currentSummaryData = null;
+  });
+
   // Check user subscription before enabling chatbot
   chatbotModeBtn.addEventListener("click", async function () {
     try {
@@ -66,7 +79,7 @@ document.addEventListener("DOMContentLoaded", function () {
         summary.innerHTML = "";
         summary.appendChild(premiumMessage);
 
-        // Handle upgrade button click - Updated to go directly to payment section
+        // Handle upgrade button click
         upgradeButton.addEventListener("click", function () {
           chrome.tabs.create({
             url: chrome.runtime.getURL("options.html#payment"),
@@ -96,22 +109,8 @@ document.addEventListener("DOMContentLoaded", function () {
     summary.textContent = "Summary will be generated here.";
   });
 
-  aiProviderSelect.addEventListener("change", function () {
-    if (this.value === "selectone") {
-      generateSummaryBtn.disabled = true;
-      generateSummaryBtn.style.opacity = "0.5";
-    } else {
-      generateSummaryBtn.disabled = false;
-      generateSummaryBtn.style.opacity = "1";
-    }
-  });
-
   // Check if user is authenticated before allowing summary generation
   generateSummaryBtn.addEventListener("click", function () {
-    if (aiProviderSelect.value === "selectone") {
-      summary.innerText = "Please select an AI provider first.";
-      return;
-    }
     chrome.runtime.sendMessage({ action: "checkAuth" }, function (response) {
       if (response && response.isAuthenticated) {
         generateSummary();
@@ -130,6 +129,11 @@ document.addEventListener("DOMContentLoaded", function () {
     const type = summaryTypeCheckbox.checked ? "long" : "short";
     const aiProvider = aiProviderSelect.value;
 
+    if (!aiProvider || aiProvider === "selectone") {
+      summary.innerText = "Please select an AI provider first.";
+      return;
+    }
+
     summaryLoader.style.display = "block";
     summary.innerText = "";
 
@@ -144,7 +148,7 @@ document.addEventListener("DOMContentLoaded", function () {
               type,
               tabs[0].url,
               new URL(tabs[0].url).hostname,
-              false, // Initially set save to false
+              false,
               aiProvider
             );
           } else {
@@ -159,12 +163,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function getSelectedOrFullText() {
     const selectedText = window.getSelection().toString();
-
     if (selectedText) {
       return { text: selectedText, isSelected: true };
     }
-
-    // Get the main content of the page (first 5000 chars)
     return { text: document.body.innerText.slice(0, 5000), isSelected: false };
   }
 
@@ -215,7 +216,6 @@ document.addEventListener("DOMContentLoaded", function () {
     return saveButton;
   }
 
-  // Update the fetchSummary function in popup.js
   function fetchSummary(text, type, url, domain, save, aiProvider) {
     fetch("http://localhost:3000/summarize", {
       method: "POST",
@@ -240,6 +240,7 @@ document.addEventListener("DOMContentLoaded", function () {
           setTimeout(() => generateSummary(), 2000);
           return;
         }
+
         summaryLoader.style.display = "none";
         summary.innerText = data.response;
 

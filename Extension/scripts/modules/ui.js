@@ -57,34 +57,34 @@ export function showUserDetails(user) {
       .join("") || "No payment history";
 
   modalContent.innerHTML = `
-      <div class="user-detail-section">
-        <h5>User Information</h5>
-        <p><strong>Name:</strong> ${user.name}</p>
-        <p><strong>Email:</strong> ${user.email}</p>
-        <p><strong>Role:</strong> ${user.role}</p>
-        <p><strong>Subscription:</strong> ${user.subscription}</p>
-        <p><strong>Created:</strong> ${new Date(
-          user.createdAt
-        ).toLocaleString()}</p>
-        <p><strong>Last Login:</strong> ${
-          user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Never"
-        }</p>
+    <div class="user-detail-section">
+      <h5>User Information</h5>
+      <p><strong>Name:</strong> ${user.name}</p>
+      <p><strong>Email:</strong> ${user.email}</p>
+      <p><strong>Role:</strong> ${user.role}</p>
+      <p><strong>Subscription:</strong> ${user.subscription}</p>
+      <p><strong>Created:</strong> ${new Date(
+        user.createdAt
+      ).toLocaleString()}</p>
+      <p><strong>Last Login:</strong> ${
+        user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "Never"
+      }</p>
+    </div>
+    
+    <div class="user-detail-section">
+      <h5>Login History</h5>
+      <div class="login-history">
+        ${loginHistory}
       </div>
-      
-      <div class="user-detail-section">
-        <h5>Login History</h5>
-        <div class="login-history">
-          ${loginHistory}
-        </div>
+    </div>
+    
+    <div class="user-detail-section">
+      <h5>Payment History</h5>
+      <div class="payment-history">
+        ${paymentHistory}
       </div>
-      
-      <div class="user-detail-section">
-        <h5>Payment History</h5>
-        <div class="payment-history">
-          ${paymentHistory}
-        </div>
-      </div>
-    `;
+    </div>
+  `;
 
   userModal.classList.remove("hidden");
 }

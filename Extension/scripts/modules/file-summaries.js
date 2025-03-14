@@ -17,6 +17,12 @@ export async function initializeFileSummaries() {
     }
 
     const file = fileUpload.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      // 10MB limit
+      showError("File size must be less than 10MB");
+      return;
+    }
+
     const type = summaryTypeToggle?.checked ? "long" : "short";
 
     // Show loader
@@ -25,14 +31,24 @@ export async function initializeFileSummaries() {
     if (downloadContainer) downloadContainer.classList.add("hidden");
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("type", type);
+      // Read file content
+      const text = await readFileContent(file);
 
-      const response = await fetch("http://localhost:3000/summarize/file-summary", {
+      const response = await fetch("http://localhost:3000/summarize", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         credentials: "include",
-        body: formData
+        body: JSON.stringify({
+          text,
+          type,
+          url: `file-summary-${Date.now()}`,
+          domain: "File Summary",
+          title: file.name,
+          aiProvider: "gemini", // Always use Gemini for file summaries
+          save: false,
+        }),
       });
 
       const data = await response.json();
@@ -40,7 +56,25 @@ export async function initializeFileSummaries() {
       if (response.ok) {
         currentSummary = data.response;
         if (fileSummaryContent) {
-          fileSummaryContent.textContent = data.response;
+          // Create a summary container with file info and content
+          fileSummaryContent.innerHTML = `
+            <div class="summary-container">
+              <div class="file-info">
+                <div class="file-name">
+                  <strong>File:</strong> ${file.name}
+                </div>
+                <div class="summary-type">
+                  <strong>Summary Type:</strong> ${
+                    type === "short" ? "Short" : "Long"
+                  }
+                </div>
+              </div>
+              <div class="summary-text">
+                <strong>Summary:</strong>
+                <p>${data.response}</p>
+              </div>
+            </div>
+          `;
           downloadContainer?.classList.remove("hidden");
         }
       } else if (data.redirectTo === "payment") {
@@ -60,6 +94,13 @@ export async function initializeFileSummaries() {
     } catch (error) {
       console.error("File summary error:", error);
       showError(error.message || "Error processing file");
+      if (fileSummaryContent) {
+        fileSummaryContent.innerHTML = `
+          <div class="error-message">
+            <p>Failed to generate summary. Please try again.</p>
+          </div>
+        `;
+      }
     } finally {
       if (fileSummaryLoader) fileSummaryLoader.style.display = "none";
     }
@@ -69,24 +110,29 @@ export async function initializeFileSummaries() {
     if (!currentSummary) return;
 
     try {
-      const response = await fetch("http://localhost:3000/summarize/download-file-summary", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          content: currentSummary,
-          type: summaryTypeToggle?.checked ? "long" : "short",
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:3000/summarize/download-file-summary",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            content: currentSummary,
+            type: summaryTypeToggle?.checked ? "long" : "short",
+          }),
+        }
+      );
 
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${summaryTypeToggle?.checked ? "long" : "short"}-file-summary.txt`;
+        a.download = `${
+          summaryTypeToggle?.checked ? "long" : "short"
+        }-file-summary.txt`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -103,6 +149,23 @@ export async function initializeFileSummaries() {
       console.error("Download error:", error);
       showError(error.message || "Error downloading summary");
     }
+  });
+
+  // Clear file input and summary when changing files
+  fileUpload?.addEventListener("click", () => {
+    fileUpload.value = "";
+    if (fileSummaryContent) fileSummaryContent.textContent = "";
+    if (downloadContainer) downloadContainer.classList.add("hidden");
+    currentSummary = null;
+  });
+}
+
+async function readFileContent(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => resolve(event.target.result);
+    reader.onerror = (error) => reject(error);
+    reader.readAsText(file);
   });
 }
 

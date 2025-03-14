@@ -1,0 +1,19 @@
+/* Search Styles */
+#search-bar {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto 20px;
+  padding: 14px 20px;
+  border: 1px solid #eaeaea;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  display: block;
+}
+
+#search-bar:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 2px 4px rgba(0, 102, 204, 0.1);
+}
