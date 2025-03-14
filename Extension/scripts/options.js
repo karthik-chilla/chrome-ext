@@ -219,10 +219,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  import("./modules/file-summaries.js").then(({ initializeFileSummaries }) => {
-    initializeFileSummaries();
-  });
-
   // Analytics Functions
   async function loadUserAnalytics() {
     try {
@@ -442,10 +438,11 @@ document.addEventListener("DOMContentLoaded", function () {
       );
 
       const data = await response.json();
+      console.log("Backend Response:", data);
 
       if (response.ok) {
         currentSummaryContent = data.response;
-        fileSummaryContent.textContent = data.response;
+        fileSummaryContent.textContent = currentSummarycontent;
         downloadContainer.classList.remove("hidden");
       } else if (data.redirectTo === "payment") {
         setActiveSection(paymentLink, paymentContent);

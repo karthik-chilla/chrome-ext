@@ -203,7 +203,7 @@ router.post("/file-summary", upload.single("file"), async (req, res) => {
         text,
         type,
         save: false,
-        url: `file-summary-${Date.now()}`, 
+        url: `file-summary-${Date.now()}`,
         domain: "File Summary",
         title: req.file.originalname,
       },

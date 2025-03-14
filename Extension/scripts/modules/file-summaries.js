@@ -40,7 +40,7 @@ export async function initializeFileSummaries() {
       if (response.ok) {
         currentSummary = data.response;
         if (fileSummaryContent) {
-          fileSummaryContent.textContent = data.response;
+          fileSummaryContent.innerHTML = `<div class="summary-text">${data.response}</div>`;
           downloadContainer?.classList.remove("hidden");
         }
       } else if (data.redirectTo === "payment") {
@@ -59,7 +59,13 @@ export async function initializeFileSummaries() {
       }
     } catch (error) {
       console.error("File summary error:", error);
-      showError(error.message || "Error processing file");
+      if (fileSummaryContent) {
+        fileSummaryContent.innerHTML = `
+          <div class="error-message">
+            <p>Error processing file: ${error.message}</p>
+          </div>
+        `;
+      }
     } finally {
       if (fileSummaryLoader) fileSummaryLoader.style.display = "none";
     }

@@ -170,23 +170,6 @@ async function summarise(req, res) {
       aiProvider = "gemini",
     } = req.body;
 
-    const restrictedDomains = [
-      "youtube.com",
-      "netflix.com",
-      "hulu.com",
-      "amazon.com/video",
-    ];
-    const urlObj = new URL(url);
-    const isDomainRestricted = restrictedDomains.some((domain) =>
-      urlObj.hostname.includes(domain)
-    );
-
-    if (isDomainRestricted) {
-      return res.status(403).json({
-        error: "This extension doesn't work on streaming/video websites",
-        isRestricted: true,
-      });
-    }
     
     /*
     const isFileSummary = url.startsWith("file-");
@@ -195,7 +178,10 @@ async function summarise(req, res) {
       return res.status(400).json({ error: "Invalid URL" });
     }*/
     
+    
     const isFileSummary = url.startsWith("file-summary-");
+
+    // Skip URL validation for file summaries
     if (!isFileSummary) {
       const restrictedDomains = [
         "youtube.com",
@@ -205,7 +191,7 @@ async function summarise(req, res) {
       ];
 
       try {
-        const urlObj = new URL(url);
+        const urlObj = new URL(url); // Validate URL only if it's not a file summary
         const isDomainRestricted = restrictedDomains.some((domain) =>
           urlObj.hostname.includes(domain)
         );
@@ -221,6 +207,7 @@ async function summarise(req, res) {
         return res.status(400).json({ error: "Invalid URL" });
       }
     }
+
 
 
     let generatedSummary;
@@ -251,6 +238,7 @@ async function summarise(req, res) {
         fallback: true,
       });
     }
+    console.log("Generated Summary:", generatedSummary); // Log the generated summary
 
     if (save) {
       try {
