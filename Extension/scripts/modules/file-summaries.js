@@ -1,5 +1,4 @@
 // File summaries related functions
-
 export async function initializeFileSummaries() {
   const fileUpload = document.getElementById("file-upload");
   const uploadButton = document.getElementById("upload-button");
@@ -19,7 +18,6 @@ export async function initializeFileSummaries() {
 
     const file = fileUpload.files[0];
     if (file.size > 10 * 1024 * 1024) {
-      // 10MB limit
       showError("File size must be less than 10MB");
       return;
     }
@@ -27,37 +25,30 @@ export async function initializeFileSummaries() {
     const type = summaryTypeToggle?.checked ? "long" : "short";
 
     // Show loader
-    if (fileSummaryLoader) fileSummaryLoader.style.display = "block";
+    if (fileSummaryLoader) fileSummaryLoader.style.display = "flex";
     if (fileSummaryContent) fileSummaryContent.textContent = "";
     if (downloadContainer) downloadContainer.classList.add("hidden");
 
     try {
-      // Read file content
-      const text = await readFileContent(file);
+      // Create FormData object
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", type);
 
-      const response = await fetch("http://localhost:3000/summarize", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          text,
-          type,
-          url: `file-summary-${Date.now()}`,
-          domain: "File Summary",
-          title: file.name,
-          aiProvider: "gemini", // Always use Gemini for file summaries
-          save: false,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:3000/summarize/summarize/file-summary",
+        {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }
+      );
 
       const data = await response.json();
 
       if (response.ok) {
         currentSummary = data.response;
         if (fileSummaryContent) {
-          // Create a summary container with file info and content
           fileSummaryContent.innerHTML = `
             <div class="summary-container">
               <div class="file-info">
@@ -161,15 +152,6 @@ export async function initializeFileSummaries() {
   });
 }
 
-async function readFileContent(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (event) => resolve(event.target.result);
-    reader.onerror = (error) => reject(error);
-    reader.readAsText(file);
-  });
-}
-
 function showError(message) {
   const errorDiv = document.createElement("div");
   errorDiv.className = "error-message";
@@ -177,4 +159,3 @@ function showError(message) {
   document.body.appendChild(errorDiv);
   setTimeout(() => errorDiv.remove(), 5000);
 }
-

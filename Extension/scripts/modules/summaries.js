@@ -4,7 +4,7 @@ export async function fetchPastSummaries(query = "") {
 
   try {
     const endpoint = query
-      ? `http://localhost:3000/summaries/search?query=${encodeURIComponent(
+      ? `http://localhost:3000/summarize/search?query=${encodeURIComponent(
           query
         )}`
       : `http://localhost:3000/summaries/summaries`;
@@ -91,6 +91,11 @@ function renderSummaries(summaries) {
                    </a>`
                 : ""
             }
+            <button class="action-button delete-button" data-id="${
+              summary._id
+            }">
+              <i class="bi bi-trash"></i> Delete
+            </button>
           </div>
 
           <div class="summary-content" id="summary-content-${
@@ -171,6 +176,58 @@ function addSummaryEventListeners() {
       fetchPastSummaries(tag.dataset.tag);
     });
   });
+
+  document.querySelectorAll(".delete-button").forEach((button) => {
+    button.addEventListener("click", handleDeleteClick);
+  });
+}
+
+async function handleDeleteClick(e) {
+  const button = e.target.closest(".delete-button");
+  const summaryId = button.dataset.id;
+
+  if (confirm("Are you sure you want to delete this summary?")) {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/summarize/summaries/${summaryId}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to delete summary");
+      }
+
+      // Remove the summary card from the UI
+      const summaryCard = button.closest(".summary-card");
+      summaryCard.remove();
+
+      // If no summaries left, show empty state
+      const remainingSummaries = document.querySelectorAll(".summary-card");
+      if (remainingSummaries.length === 0) {
+        const pastSummariesList = document.getElementById(
+          "past-summaries-list"
+        );
+        pastSummariesList.innerHTML = `
+          <div class="empty-state">
+            <p>No summaries found. Start by generating a summary from any webpage!</p>
+            <button id="generate-new">Generate New Summary</button>
+          </div>
+        `;
+
+        document
+          .getElementById("generate-new")
+          ?.addEventListener("click", () => {
+            chrome.runtime.sendMessage({ action: "openPopup" });
+          });
+      }
+    } catch (error) {
+      console.error("Error deleting summary:", error);
+      alert("Failed to delete summary. Please try again.");
+    }
+  }
 }
 
 function handleViewClick(e) {
@@ -245,7 +302,7 @@ async function handleDownloadClick(e) {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/summaries/download?url=${encodeURIComponent(
+      `http://localhost:3000/summarize/download?url=${encodeURIComponent(
         url
       )}&type=${type}`,
       {

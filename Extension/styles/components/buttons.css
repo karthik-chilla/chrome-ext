@@ -47,6 +47,15 @@
   transform: translateY(-1px);
 }
 
+.delete-button {
+  background: linear-gradient(135deg, #dc3545, #c82333);
+}
+
+.delete-button:hover {
+  background: linear-gradient(135deg, #c82333, #bd2130);
+  transform: translateY(-1px);
+}
+
 .summary-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));

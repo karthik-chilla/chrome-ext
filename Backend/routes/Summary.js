@@ -5,7 +5,7 @@ const { Summary, Tag } = require("../models/Summary");
 const passport = require("passport");
 const multer = require("multer");
 const storage = multer.memoryStorage();
-const upload = multer(storage);
+const upload = multer({ storage });
 
 const router = express.Router();
 
@@ -14,6 +14,28 @@ router.use(passport.authenticate("jwt", { session: false }));
 
 router.post("/", summarise);
 
+// Add delete route
+router.delete("/summaries/:id", async (req, res) => {
+  try {
+    const summary = await Summary.findById(req.params.id);
+
+    if (!summary) {
+      return res.status(404).json({ error: "Summary not found" });
+    }
+
+    // Check if the summary belongs to the user
+    if (summary.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    await Summary.findByIdAndDelete(req.params.id);
+    res.json({ message: "Summary deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting summary:", error);
+    res.status(500).json({ error: "Failed to delete summary" });
+  }
+});
+
 router.post("/summaries/generate", async (req, res) => {
   try {
     const { url, type, aiProvider, save } = req.body;
@@ -21,7 +43,7 @@ router.post("/summaries/generate", async (req, res) => {
     // Call the summarise function with the selected AI provider
     const summary = await summarise({
       body: { url, type, save },
-      user: req.user, // Ensure authentication is handled
+      user: req.user,
       aiProvider,
     });
 
@@ -40,7 +62,6 @@ router.get("/generate", async (req, res) => {
       return res.status(400).json({ error: "Missing url or type parameter" });
     }
 
-    // Get the existing summary
     const existingSummary = await Summary.findOne({
       url,
       user: req.user._id,
@@ -50,13 +71,11 @@ router.get("/generate", async (req, res) => {
       return res.status(404).json({ error: "Summary not found" });
     }
 
-    // Get the page content from the existing summary
     const text = existingSummary.text;
     if (!text) {
       return res.status(404).json({ error: "Original text not found" });
     }
 
-    // Create request object for summarise controller
     const mockReq = {
       body: {
         text,
@@ -69,7 +88,6 @@ router.get("/generate", async (req, res) => {
       user: req.user,
     };
 
-    // Create response object
     const mockRes = {
       json: (data) => res.json(data),
       status: (code) => ({
@@ -77,7 +95,6 @@ router.get("/generate", async (req, res) => {
       }),
     };
 
-    // Generate the summary
     await summarise(mockReq, mockRes);
   } catch (error) {
     console.error("Generate summary error:", error);
@@ -91,18 +108,17 @@ router.get("/user-analytics", async (req, res) => {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    // Get all summaries for the user
     const summaries = await Summary.find({
       user: userId,
       lastAccessed: { $gte: thirtyDaysAgo },
-      isSaved: true
+      isSaved: true,
     });
 
     let totalSummaries = 0;
     let shortCount = 0;
     let longCount = 0;
 
-    summaries.forEach(summary => {
+    summaries.forEach((summary) => {
       if (summary.shortSummary) {
         totalSummaries++;
         shortCount++;
@@ -113,40 +129,38 @@ router.get("/user-analytics", async (req, res) => {
       }
     });
 
-
-    // Calculate daily summaries
     const dailySummaries = {};
     const domains = {};
     const summaryTypes = { short: 0, long: 0 };
     const aiProviders = {};
 
     summaries.forEach((summary) => {
-      // Daily summaries
       const date = summary.lastAccessed.toISOString().split("T")[0];
-      dailySummaries[date] = (dailySummaries[date] || 0) + 
-        (summary.shortSummary ? 1 : 0) + (summary.longSummary ? 1 : 0);
+      dailySummaries[date] =
+        (dailySummaries[date] || 0) +
+        (summary.shortSummary ? 1 : 0) +
+        (summary.longSummary ? 1 : 0);
 
-
-      // Domain stats
       if (summary.domain) {
-        domains[summary.domain] = (domains[summary.domain] || 0) + 
-          (summary.shortSummary ? 1 : 0) + (summary.longSummary ? 1 : 0);
+        domains[summary.domain] =
+          (domains[summary.domain] || 0) +
+          (summary.shortSummary ? 1 : 0) +
+          (summary.longSummary ? 1 : 0);
       }
-      
 
       if (summary.shortSummary && summary.aiProvider_short) {
-        aiProviders[summary.aiProvider_short] = (aiProviders[summary.aiProvider_short] || 0) + 1;
+        aiProviders[summary.aiProvider_short] =
+          (aiProviders[summary.aiProvider_short] || 0) + 1;
       }
       if (summary.longSummary && summary.aiProvider_long) {
-        aiProviders[summary.aiProvider_long] = (aiProviders[summary.aiProvider_long] || 0) + 1;
+        aiProviders[summary.aiProvider_long] =
+          (aiProviders[summary.aiProvider_long] || 0) + 1;
       }
     });
 
-    // Get today's summaries
     const today = new Date().toISOString().split("T")[0];
     const todaySummaries = dailySummaries[today] || 0;
 
-    // Get most used AI provider
     const favoriteAi =
       Object.entries(aiProviders).sort(([, a], [, b]) => b - a)[0]?.[0] ||
       "None";
@@ -159,7 +173,7 @@ router.get("/user-analytics", async (req, res) => {
       domains,
       summaryTypes: {
         short: shortCount,
-        long: longCount
+        long: longCount,
       },
       aiProviders,
     });
@@ -169,65 +183,59 @@ router.get("/user-analytics", async (req, res) => {
   }
 });
 
+router.post(
+  "/summarize/file-summary",
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
 
-router.post("/summarize/file-summary", upload.single("file"), async (req, res) => {
-  try {
-    // Check user authentication
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    // Check user subscription
-    if (req.user.subscription === "free") {
-      return res
-        .status(403)
-        .json({
+      if (req.user.subscription === "free" && req.user.role !== "super_admin") {
+        return res.status(403).json({
           error: "Upgrade to Premium for file summaries",
           redirectTo: "payment",
         });
-    }
+      }
 
-    // Check if a file was uploaded
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
 
-    // Convert buffer to text
-    const text = req.file.buffer.toString("utf-8");
-    const type = req.body.type || "short";
+      // Convert buffer to text
+      const text = req.file.buffer.toString("utf-8");
+      const type = req.body.type || "short";
 
-    // Use the same summarise function but with save=false
-    const mockReq = {
-      user: req.user,
-      body: {
-        text,
-        type,
-        save: false,
-        url: `file-summary-${Date.now()}`,
-        domain: "File Summary",
-        title: req.file.originalname,
-      },
-    };
-
-    const mockRes = {
-      json: (data) => {
-        res.json(data);
-      },
-      status: (statusCode) => ({
-        json: (data) => {
-          res.status(statusCode).json(data);
+      // Create mock request for summarise controller
+      const mockReq = {
+        user: req.user,
+        body: {
+          text,
+          type,
+          save: false,
+          url: `file-summary-${Date.now()}`,
+          domain: "File Summary",
+          title: req.file.originalname,
+          aiProvider: "gemini", // Always use Gemini for file summaries
         },
-      }),
-    };
+      };
 
-    // Call the summarise function
-    await summarise(mockReq, mockRes);
-  } catch (error) {
-    console.error("File summary error:", error);
-    res.status(500).json({ error: "Failed to process file summary" });
+      // Create mock response
+      const mockRes = {
+        json: (data) => res.json(data),
+        status: (code) => ({
+          json: (data) => res.status(code).json(data),
+        }),
+      };
+
+      await summarise(mockReq, mockRes);
+    } catch (error) {
+      console.error("File summary error:", error);
+      res.status(500).json({ error: "Failed to process file summary" });
+    }
   }
-});
-
+);
 
 router.post("/download-file-summary", async (req, res) => {
   try {
@@ -235,13 +243,14 @@ router.post("/download-file-summary", async (req, res) => {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    if (req.user.subscription !== "premium") {
-      return res
-        .status(403)
-        .json({
-          error: "Upgrade to Premium to download summaries",
-          redirectTo: "payment",
-        });
+    if (
+      req.user.subscription !== "premium" &&
+      req.user.role !== "super_admin"
+    ) {
+      return res.status(403).json({
+        error: "Upgrade to Premium to download summaries",
+        redirectTo: "payment",
+      });
     }
 
     const { content, type } = req.body;
@@ -270,7 +279,6 @@ router.get("/summaries", async (req, res) => {
     const { aiProvider } = req.query;
     const filter = { user: req.user._id };
 
-    // Add AI provider filter if specified
     if (aiProvider && aiProvider !== "all") {
       filter.aiProvider = aiProvider;
     }
@@ -286,7 +294,6 @@ router.get("/summaries", async (req, res) => {
   }
 });
 
-// Search summaries by text or tags
 router.get("/search", async (req, res) => {
   try {
     if (!req.user) {
@@ -303,7 +310,6 @@ router.get("/search", async (req, res) => {
       ],
     };
 
-    // Add AI provider filter if specified
     if (aiProvider && aiProvider !== "all") {
       filter.aiProvider = aiProvider;
     }
@@ -322,7 +328,6 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// Get all unique tags
 router.get("/tags", async (req, res) => {
   try {
     if (!req.user) {
@@ -355,7 +360,6 @@ router.get("/tags", async (req, res) => {
   }
 });
 
-// Get summaries by tag
 router.get("/by-tag/:tag", async (req, res) => {
   try {
     if (!req.user) {
@@ -386,7 +390,6 @@ router.get("/by-tag/:tag", async (req, res) => {
   }
 });
 
-// Download summary
 router.get("/download", async (req, res) => {
   try {
     if (!req.user) {
