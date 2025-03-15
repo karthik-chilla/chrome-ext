@@ -73,6 +73,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (authResult) {
     currentUserRole = authResult;
     if (currentUserRole === "super_admin") {
+      
       adminPanelLink.classList.remove("hidden");
       adminPanelLink.classList.add("visible");
       // Hide favorite AI box for admin as it's not relevant

@@ -1,0 +1,196 @@
+/* Admin Panel Styles */
+.admin-header {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eaeaea;
+  }
+  
+  .admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+  }
+  
+  .admin-stat-box {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+    transition: transform 0.2s ease;
+  }
+  
+  .admin-stat-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .admin-stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #007bff;
+    margin-bottom: 8px;
+  }
+  
+  .admin-stat-label {
+    font-size: 14px;
+    color: #666;
+  }
+  
+  .admin-filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  
+  .admin-search {
+    flex: 1;
+    min-width: 250px;
+    padding: 12px;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  
+  .admin-filter-select {
+    padding: 12px;
+    border: 1px solid #eaeaea;
+    border-radius: 8px;
+    font-size: 14px;
+    min-width: 200px;
+  }
+  
+  .users-table {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eaeaea;
+  }
+  
+  .users-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .users-table th,
+  .users-table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #eaeaea;
+  }
+  
+  .users-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  
+  .users-table tr:hover {
+    background: #f8f9fa;
+  }
+  
+  .user-role {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .role-admin {
+    background: #e8f5e9;
+    color: #28a745;
+  }
+  
+  .role-user {
+    background: #e3f2fd;
+    color: #007bff;
+  }
+  
+  .user-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .delete-button {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .delete-button:hover {
+    background: #c82333;
+  }
+  
+  .modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eaeaea;
+  }
+  
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+  }
+  
+  .modal-close:hover {
+    color: #333;
+  }
+  
+  @media (max-width: 768px) {
+    .admin-stats {
+      grid-template-columns: 1fr 1fr;
+    }
+  
+    .admin-filters {
+      flex-direction: column;
+    }
+  
+    .users-table {
+      overflow-x: auto;
+    }
+  
+    .modal-content {
+      width: 95%;
+      margin: 10px;
+    }
+  }

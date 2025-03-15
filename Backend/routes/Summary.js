@@ -170,7 +170,7 @@ router.get("/user-analytics", async (req, res) => {
 });
 
 
-router.post("/file-summary", upload.single("file"), async (req, res) => {
+router.post("/summarize/file-summary", upload.single("file"), async (req, res) => {
   try {
     // Check user authentication
     if (!req.user) {
@@ -227,107 +227,6 @@ router.post("/file-summary", upload.single("file"), async (req, res) => {
     res.status(500).json({ error: "Failed to process file summary" });
   }
 });
-/*
-const mammoth = require("mammoth");
-const pdfParse = require("pdf-parse");
-const textract = require("textract");
-
-const allowedMimeTypes = [
-  "text/plain", // .txt
-  "application/pdf", // .pdf
-  "application/msword", // .doc
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-];
-
-router.post("/file-summary", upload.single("file"), async (req, res) => {
-  try {
-    // Check user authentication
-    if (!req.user) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    // Check user subscription
-    if (req.user.subscription === "free") {
-      return res.status(403).json({
-        error: "Upgrade to Premium for file summaries",
-        redirectTo: "payment",
-      });
-    }
-
-    // Check if a file was uploaded
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
-
-    // Validate file type
-    if (!allowedMimeTypes.includes(req.file.mimetype)) {
-      return res.status(400).json({ error: "Unsupported file type" });
-    }
-
-    let text;
-
-    // Extract text based on file type
-    if (req.file.mimetype === "application/pdf") {
-      // Extract text from PDF
-      const data = await pdfParse(req.file.buffer);
-      text = data.text;
-    } else if (
-      req.file.mimetype ===
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    ) {
-      // Extract text from .docx
-      const result = await mammoth.extractRawText({ buffer: req.file.buffer });
-      text = result.value;
-    } else if (req.file.mimetype === "application/msword") {
-      // Extract text from .doc
-      text = await new Promise((resolve, reject) => {
-        textract.fromBufferWithMime(req.file.mimetype, req.file.buffer, (err, extractedText) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(extractedText);
-          }
-        });
-      });
-    } else if (req.file.mimetype === "text/plain") {
-      // Extract text from .txt
-      text = req.file.buffer.toString("utf-8");
-    } else {
-      return res.status(400).json({ error: "Unsupported file type" });
-    }
-
-    // Use the same summarise function but with save=false
-    const mockReq = {
-      user: req.user,
-      body: {
-        text,
-        type: req.body.type || "short",
-        save: false,
-        url: `file-summary-${Date.now()}`,
-        domain: "File Summary",
-        title: req.file.originalname,
-      },
-    };
-
-    const mockRes = {
-      json: (data) => {
-        res.json(data);
-      },
-      status: (statusCode) => ({
-        json: (data) => {
-          res.status(statusCode).json(data);
-        },
-      }),
-    };
-
-    // Call the summarise function
-    await summarise(mockReq, mockRes);
-  } catch (error) {
-    console.error("File summary error:", error);
-    res.status(500).json({ error: "Failed to process file summary" });
-  }
-});
-*/
 
 
 router.post("/download-file-summary", async (req, res) => {

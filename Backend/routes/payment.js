@@ -20,9 +20,7 @@ router.get(
         name: "Basic Plan",
         price: 4.99,
         features: [
-          "Unlimited summaries",
-          "Save up to 50 summaries",
-          "Basic tag generation",
+          "File summaries generation",
         ],
       },
       {
@@ -30,11 +28,8 @@ router.get(
         name: "Premium Plan",
         price: 9.99,
         features: [
-          "Unlimited summaries",
-          "Save unlimited summaries",
-          "Advanced tag generation",
-          "Priority support",
-          "Export to PDF/Word",
+          "Access to Chatbot",
+          "Generate and Download file summaries",
         ],
       },
     ];

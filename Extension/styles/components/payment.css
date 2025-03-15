@@ -1,0 +1,160 @@
+/* Payment Styles */
+.plans-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+    padding: 20px;
+  }
+  
+  .plan-card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eaeaea;
+    transition: transform 0.2s ease;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .plan-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  }
+  
+  .plan-name {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 8px;
+  }
+  
+  .plan-price {
+    font-size: 36px;
+    font-weight: 700;
+    color: #007bff;
+    margin-bottom: 24px;
+  }
+  
+  .plan-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 24px;
+  }
+  
+  .plan-features li {
+    padding: 8px 0;
+    color: #444;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .plan-features li::before {
+    content: "✓";
+    color: #28a745;
+    font-weight: bold;
+  }
+  
+  .subscribe-button {
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: auto;
+  }
+  
+  .subscribe-button:hover {
+    background: linear-gradient(135deg, #0056b3, #003d80);
+    transform: translateY(-2px);
+  }
+  
+  .current-plan {
+    border: 2px solid #28a745;
+    position: relative;
+  }
+  
+  .current-plan::after {
+    content: "Current Plan";
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #28a745;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .payment-history {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #eaeaea;
+    margin: 20px;
+  }
+  
+  .payment-item {
+    padding: 16px;
+    border-bottom: 1px solid #eaeaea;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+  }
+  
+  .payment-item:last-child {
+    border-bottom: none;
+  }
+  
+  .payment-date {
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .payment-amount {
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  
+  .payment-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .status-completed {
+    background: #e8f5e9;
+    color: #28a745;
+  }
+  
+  .status-pending {
+    background: #fff3cd;
+    color: #ffc107;
+  }
+  
+  .status-failed {
+    background: #f8d7da;
+    color: #dc3545;
+  }
+  
+  @media (max-width: 768px) {
+    .plans-container {
+      grid-template-columns: 1fr;
+      padding: 15px;
+    }
+  
+    .payment-item {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+  }

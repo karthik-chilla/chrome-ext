@@ -1,4 +1,5 @@
 // File summaries related functions
+
 export async function initializeFileSummaries() {
   const fileUpload = document.getElementById("file-upload");
   const uploadButton = document.getElementById("upload-button");
@@ -176,3 +177,4 @@ function showError(message) {
   document.body.appendChild(errorDiv);
   setTimeout(() => errorDiv.remove(), 5000);
 }
+

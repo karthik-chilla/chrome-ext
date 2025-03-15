@@ -1,0 +1,84 @@
+/* Analytics Styles */
+.analytics-container {
+    margin-bottom: 30px;
+  }
+  
+  .analytics-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .chart-container {
+    flex: 1;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    min-height: 300px;
+    max-width: 500px;
+  }
+  
+  .chart-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 20px;
+    text-align: center;
+    color: #dc3545;
+    font-size: 14px;
+    background: #f8d7da;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+  }
+  
+  .chart-error p {
+    margin: 0;
+  }
+  
+  .stat-box {
+    flex: 1;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    transition: transform 0.2s ease;
+    border: 1px solid #e9ecef;
+  }
+  
+  .stat-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .stat-label {
+    display: block;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  
+  .stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+  }
+  
+  @media (max-width: 768px) {
+    .analytics-row {
+      flex-direction: column;
+    }
+  
+    .chart-container {
+      width: 100%;
+      max-width: 100%;
+    }
+  
+    .stat-box {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  }

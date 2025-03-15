@@ -235,7 +235,7 @@ async function summarise(req, res) {
         fallback: true,
       });
     }
-    console.log("Generated Summary:", generatedSummary); // Log the generated summary
+    // Log the generated summary
 
     if (save && !isFileSummary) {
       try {
@@ -332,5 +332,6 @@ async function summarise(req, res) {
     res.status(500).json({ error: "Error fetching summary" });
   }
 }
+
 
 module.exports = summarise;
