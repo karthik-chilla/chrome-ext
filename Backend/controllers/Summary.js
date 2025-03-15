@@ -189,7 +189,7 @@ async function summarise(req, res) {
       ];
 
       try {
-        const urlObj = new URL(url);
+        const urlObj = new URL(url); // Validate URL only if it's not a file summary
         const isDomainRestricted = restrictedDomains.some((domain) =>
           urlObj.hostname.includes(domain)
         );
@@ -235,6 +235,7 @@ async function summarise(req, res) {
         fallback: true,
       });
     }
+    // Log the generated summary
 
     if (save && !isFileSummary) {
       try {
@@ -331,5 +332,6 @@ async function summarise(req, res) {
     res.status(500).json({ error: "Error fetching summary" });
   }
 }
+
 
 module.exports = summarise;

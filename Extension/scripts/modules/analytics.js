@@ -12,6 +12,22 @@ function destroyCharts() {
 
 export async function loadUserAnalytics() {
   try {
+
+    const profileResponse = await fetch("http://localhost:3000/profile", {
+      credentials: "include",
+    });
+    const profile = await profileResponse.json();
+
+    // If super_admin, hide analytics section and return
+    if (profile.role === "super_admin") {
+      const analyticsSection = document.querySelector(".user-analytics");
+      if (analyticsSection) {
+        analyticsSection.style.display = "none";
+      }
+      return;
+    }
+
+
     // Destroy existing charts first
     destroyCharts();
 
