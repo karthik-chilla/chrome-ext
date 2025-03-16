@@ -50,6 +50,16 @@ const UserSchema = new mongoose.Schema({
   summaryHistory: [SummaryHistorySchema]
   
 
+}, {
+  timestamps: true,
+  collection: 'users' // Explicitly set collection name
 });
+
+// Create indexes for better query performance
+UserSchema.index({ email: 1 });
+UserSchema.index({ googleId: 1 });
+UserSchema.index({ createdAt: -1 });
+UserSchema.index({ "loginHistory.timestamp": -1 });
+
 
 module.exports = mongoose.model("User", UserSchema);
