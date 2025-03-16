@@ -230,6 +230,19 @@ router.post(
       };
 
       await summarise(mockReq, mockRes);
+
+      const summaryHistoryEntry = {
+        timestamp: new Date(),
+        type,
+        url: mockReq.body.url,
+        domain: mockReq.body.domain,
+      };
+  
+      await User.findByIdAndUpdate(req.user._id, {
+        $inc: { summaryCount: 1 },
+        $push: { summaryHistory: summaryHistoryEntry },
+      });
+      
     } catch (error) {
       console.error("File summary error:", error);
       res.status(500).json({ error: "Failed to process file summary" });
