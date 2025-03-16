@@ -12,13 +12,25 @@ export async function initializeFileSummaries() {
 
   uploadButton?.addEventListener("click", async () => {
     if (!fileUpload?.files?.length) {
-      showError("Please select a file first");
+      showToast("Please select a file first", "error");
       return;
     }
 
     const file = fileUpload.files[0];
+    
+    // Check file size
     if (file.size > 10 * 1024 * 1024) {
-      showError("File size must be less than 10MB");
+      showToast("File size must be less than 10MB", "error");
+      return;
+    }
+
+    // Check file extension
+    const allowedExtensions = ['.txt', '.doc', '.docx', '.pdf'];
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedExtensions.includes(fileExtension)) {
+      showToast("This file format is not supported. Please upload .txt, .doc, .docx, or .pdf files only.", "error");
+      fileUpload.value = ''; // Clear the file input
       return;
     }
 
@@ -74,18 +86,22 @@ export async function initializeFileSummaries() {
           fileSummaryContent.innerHTML = `
             <div class="premium-message">
               <p>⭐ File summaries are available for premium users only</p>
-              <button onclick="window.location.hash='#payment'" class="upgrade-button">
+              <button onclick="window.location.hash='#payment'; handlePaymentRedirect();" class="upgrade-button">
                 Upgrade to Premium
               </button>
             </div>
           `;
+
+
         }
+
+        
       } else {
         throw new Error(data.error || "Failed to generate summary");
       }
     } catch (error) {
       console.error("File summary error:", error);
-      showError(error.message || "Error processing file");
+      showToast(error.message || "Error processing file", "error");
       if (fileSummaryContent) {
         fileSummaryContent.innerHTML = `
           <div class="error-message">
@@ -102,6 +118,19 @@ export async function initializeFileSummaries() {
     if (!currentSummary) return;
 
     try {
+      // First check user's subscription
+      const profileResponse = await fetch("http://localhost:3000/profile", {
+        credentials: "include",
+      });
+      const profile = await profileResponse.json();
+
+      if (profile.subscription !== "premium" && profile.role !== "super_admin") {
+        // Show premium required message and redirect to payment
+        redirectToPayment();
+        showToast("⭐ Upgrade to Premium to download summaries");
+        return;
+      }
+
       const response = await fetch(
         "http://localhost:3000/summarize/download-file-summary",
         {
@@ -132,14 +161,14 @@ export async function initializeFileSummaries() {
       } else {
         const data = await response.json();
         if (data.redirectTo === "payment") {
-          window.location.hash = "#payment";
+          redirectToPayment();
         } else {
           throw new Error(data.error || "Failed to download summary");
         }
       }
     } catch (error) {
       console.error("Download error:", error);
-      showError(error.message || "Error downloading summary");
+      showToast(error.message || "Error downloading summary", "error");
     }
   });
 
@@ -150,12 +179,88 @@ export async function initializeFileSummaries() {
     if (downloadContainer) downloadContainer.classList.add("hidden");
     currentSummary = null;
   });
+
+  // Handle hash change for payment redirect
+  window.addEventListener('hashchange', handlePaymentRedirect);
+  
+  // Check if we're redirected to payment on load
+  if (window.location.hash === '#payment') {
+    handlePaymentRedirect();
+  }
 }
 
-function showError(message) {
-  const errorDiv = document.createElement("div");
-  errorDiv.className = "error-message";
-  errorDiv.textContent = message;
-  document.body.appendChild(errorDiv);
-  setTimeout(() => errorDiv.remove(), 5000);
+function handlePaymentRedirect() {
+  if (window.location.hash === '#payment') {
+    const paymentSection = document.getElementById('payment-content');
+    const paymentLink = document.getElementById('payment');
+    const sections = document.querySelectorAll('.content-section');
+    const links = document.querySelectorAll('.sidebar a');
+    
+    // Hide all sections and remove active class from links
+    sections.forEach(section => section.classList.add('hidden'));
+    links.forEach(link => link.classList.remove('active'));
+    
+    // Show payment section and activate payment link
+    if (paymentSection) {
+      paymentSection.classList.remove('hidden');
+      paymentLink?.classList.add('active');
+      
+      // Import and call fetchPlans
+      import('./payment.js').then(module => {
+        module.fetchPlans();
+        module.fetchPaymentHistory();
+      });
+      
+      // Scroll to top of payment section
+      paymentSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  }
+}
+
+function showToast(message, type = 'info') {
+  // Remove any existing toasts
+  const existingToast = document.querySelector('.toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+
+  // Create toast container if it doesn't exist
+  let toastContainer = document.querySelector('.toast-container');
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+
+  // Create new toast
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  
+  // Add icon based on type
+  const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+  
+  toast.innerHTML = `
+    <div class="toast-content">
+      <span class="toast-icon">${icon}</span>
+      <span class="toast-message">${message}</span>
+    </div>
+  `;
+  
+  toastContainer.appendChild(toast);
+
+  // Trigger animation
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 100);
+
+  // Remove toast after delay
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+function redirectToPayment() {
+  window.location.hash = '#payment';
+  handlePaymentRedirect();
 }
