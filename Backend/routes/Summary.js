@@ -2,6 +2,7 @@ const express = require("express");
 const session = require("express-session");
 const summarise = require("../controllers/Summary");
 const { Summary, Tag } = require("../models/Summary");
+const User = require("../models/User");
 const passport = require("passport");
 const multer = require("multer");
 const storage = multer.memoryStorage();

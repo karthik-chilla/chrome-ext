@@ -22,14 +22,10 @@ export async function fetchPastSummaries(query = "") {
     if (summaries.length === 0) {
       pastSummariesList.innerHTML = `
         <div class="empty-state">
-          <p>No summaries found. Start by generating a summary from any webpage!</p>
-          <button id="generate-new">Generate New Summary</button>
+          <h3>No summaries found. Start by generating a summary from any webpage!</h3>
         </div>
       `;
 
-      document.getElementById("generate-new")?.addEventListener("click", () => {
-        chrome.runtime.sendMessage({ action: "openPopup" });
-      });
       return;
     }
 
@@ -213,15 +209,10 @@ async function handleDeleteClick(e) {
         pastSummariesList.innerHTML = `
           <div class="empty-state">
             <p>No summaries found. Start by generating a summary from any webpage!</p>
-            <button id="generate-new">Generate New Summary</button>
           </div>
         `;
 
-        document
-          .getElementById("generate-new")
-          ?.addEventListener("click", () => {
-            chrome.runtime.sendMessage({ action: "openPopup" });
-          });
+       
       }
     } catch (error) {
       console.error("Error deleting summary:", error);

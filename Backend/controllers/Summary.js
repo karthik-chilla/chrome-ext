@@ -96,27 +96,61 @@ async function generateSummaryWithGroq(text, type, modelType) {
   }
 }
 
+
 async function generateSummaryWithT5(text, type) {
   try {
     console.log("Generating summary using T5...");
 
-    // Truncate text to T5's max input length (512 tokens ≈ 1000 words)
-    const truncatedText = text.split(" ").slice(0, 1000).join(" ");
+    // Improved text preprocessing
+    const cleanText = text
+      .replace(/\s+/g, ' ')
+      .trim();
 
-    // Generate summary with T5
-    const result = await t5Summarizer(truncatedText, {
-      max_length: type === "short" ? 30 : 150,
-      min_length: type === "short" ? 10 : 50,
-      length_penalty: 2.0,
-      num_beams: 4,
-      early_stopping: true,
-    });
+    // Calculate appropriate length based on type
+    const maxLength = type === "short" ? 50 : 150;
+    const minLength = type === "short" ? 30 : 100;
 
-    if (!result || !result[0]?.summary_text) {
+    // Split text into chunks if it's too long
+    const maxInputLength = 512; // T5's max input length
+    const chunks = [];
+    const words = cleanText.split(' ');
+    
+    for (let i = 0; i < words.length; i += maxInputLength) {
+      chunks.push(words.slice(i, i + maxInputLength).join(' '));
+    }
+
+    // Generate summary for each chunk
+    const summaries = await Promise.all(
+      chunks.map(async (chunk) => {
+        const result = await t5Summarizer(chunk, {
+          max_length: maxLength,
+          min_length: minLength,
+          length_penalty: 2.0,
+          num_beams: 6, // Increased for better quality
+          early_stopping: true,
+          no_repeat_ngram_size: 3,
+          do_sample: false // Deterministic generation
+        });
+
+        return result[0].summary_text;
+      })
+    );
+
+    // Combine summaries if there were multiple chunks
+    let finalSummary = summaries.join(' ');
+
+    // Post-process the summary
+    finalSummary = finalSummary
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/^"|"$/g, '') // Remove quotes if present
+      .replace(/\.$/, '') + '.'; // Ensure it ends with a period
+
+    if (!finalSummary) {
       throw new Error("T5 model failed to generate a summary");
     }
 
-    return result[0].summary_text;
+    return finalSummary;
   } catch (error) {
     console.error("T5 Error:", error.message);
     throw new Error("Failed to generate summary with T5");

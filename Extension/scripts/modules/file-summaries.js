@@ -126,7 +126,6 @@ export async function initializeFileSummaries() {
 
       if (profile.subscription !== "premium" && profile.role !== "super_admin") {
         // Show premium required message and redirect to payment
-        redirectToPayment();
         showToast("⭐ Upgrade to Premium to download summaries");
         return;
       }

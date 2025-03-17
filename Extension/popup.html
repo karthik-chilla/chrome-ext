@@ -1,10 +1,12 @@
- 
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Web Summarizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
@@ -13,7 +15,7 @@
   </head>
   <body>
     <div class="container">
-      <!-- Auth Container -->
+     
       <div id="auth-container">
         <h2>🔐 Authentication</h2>
         <div id="login-form" class="auth-form">
@@ -73,7 +75,7 @@
         </div>
       </div>
  
-      <!-- Main App Container -->
+      
       <div id="app-container" class="hidden">
         <div class="header">
           <h2>🔍 Web Summarizer</h2>
@@ -87,13 +89,13 @@
           </div>
         </div>
  
-        <!-- Mode Toggle -->
+        
         <div class="mode-toggle">
           <button id="summary-mode-btn" class="mode-btn active">Summary</button>
           <button id="chatbot-mode-btn" class="mode-btn">Chatbot</button>
         </div>
  
-        <!-- Summary Mode Content -->
+        
         <div id="summary-mode" class="mode-content">
           <div class="toggle-container">
             <label for="summaryType">Summary Type:</label>
@@ -129,7 +131,7 @@
           <div id="summary">Summary will be generated here.</div>
         </div>
  
-        <!-- Chatbot Mode Content -->
+       
         <div id="chatbot-mode" class="mode-content hidden">
           <div class="chat-container">
             <div id="chat-messages">
@@ -162,3 +164,153 @@
     <script src="scripts/chatbot.js"></script>
   </body>
 </html>
+
+
+
+<!---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Summarizer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="styles/popup.css" />
+  </head>
+  <body class="bg-light">
+    <div class="container py-4">
+     
+      <div id="auth-container" class="card shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title mb-4">🔐 Authentication</h2>
+          <div id="login-form" class="auth-form">
+            <h3 class="h5 mb-3">Login</h3>
+            <div class="mb-3">
+              <input type="email" id="login-email" class="form-control" placeholder="Email" required />
+            </div>
+            <div class="mb-3">
+              <input type="password" id="login-password" class="form-control" placeholder="Password" required />
+            </div>
+            <button id="login-button" class="btn btn-primary w-100">Login</button>
+            <div id="login-error" class="alert alert-danger mt-3 d-none"></div>
+            <div class="google-auth mt-3">
+              <button id="google-login" class="btn btn-outline-secondary w-100">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" class="me-2" />
+                Login with Google
+              </button>
+            </div>
+            <p class="text-center mt-3">
+              Don't have an account? <a href="#" id="show-signup" class="text-primary">Sign up</a>
+            </p>
+          </div>
+
+          <div id="signup-form" class="auth-form hidden">
+            <h3 class="h5 mb-3">Sign Up</h3>
+            <div class="mb-3">
+              <input type="text" id="signup-name" class="form-control" placeholder="Full Name" required />
+            </div>
+            <div class="mb-3">
+              <input type="email" id="signup-email" class="form-control" placeholder="Email" required />
+            </div>
+            <div class="mb-3">
+              <input type="password" id="signup-password" class="form-control" placeholder="Password" required />
+            </div>
+            <button id="signup-button" class="btn btn-primary w-100">Sign Up</button>
+            <div id="signup-error" class="alert alert-danger mt-3 d-none"></div>
+            <div class="google-auth mt-3">
+              <button id="google-signup" class="btn btn-outline-secondary w-100">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" class="me-2" />
+                Sign up with Google
+              </button>
+            </div>
+            <p class="text-center mt-3">
+              Already have an account? <a href="#" id="show-login" class="text-primary">Login</a>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      
+      <div id="app-container" class="card shadow-sm hidden">
+        <div class="card-body">
+          <div class="header d-flex justify-content-between align-items-center mb-4">
+            <h2 class="h4 mb-0">🔍 Web Summarizer</h2>
+            <div class="user-info dropdown">
+              <img id="user-avatar" src="" alt="User" class="rounded-circle" data-bs-toggle="dropdown" />
+              <div class="dropdown-menu">
+                <span id="user-name" class="dropdown-item-text"></span>
+                <span id="user-email" class="dropdown-item-text"></span>
+                <div class="dropdown-divider"></div>
+                <button id="logout-button" class="dropdown-item text-danger">Logout</button>
+              </div>
+            </div>
+          </div>
+
+         
+          <div class="btn-group w-100 mb-4">
+            <button id="summary-mode-btn" class="btn btn-outline-primary active">Summary</button>
+            <button id="chatbot-mode-btn" class="btn btn-outline-primary">Chatbot</button>
+          </div>
+
+         
+          <div id="summary-mode" class="mode-content">
+            <div class="form-group mb-3">
+              <label class="form-label">Summary Type:</label>
+              <div class="form-check form-switch">
+                <input type="checkbox" id="summaryType" class="form-check-input" />
+                <label class="form-check-label">Short/Long</label>
+              </div>
+            </div>
+
+            <div class="form-group mb-3">
+              <label for="ai-provider" class="form-label">Select AI Provider:</label>
+              <select id="ai-provider" class="form-select">
+                <option value="gemini">Gemini</option>
+                <option value="gemma">Gemma</option>
+                <option value="llama">llama</option>
+                <option value="mixtral">Mixtral</option>
+                <option value="t5">Google T5</option>
+              </select>
+            </div>
+
+            <button id="generate-summary" class="btn btn-primary w-100 mb-2">✨ Generate Summary</button>
+            <button id="more-button" class="btn btn-secondary w-100">More Options</button>
+
+            <div class="loader text-center my-4 d-none" id="summary-loader">
+              <div class="spinner-border text-primary"></div>
+              <p class="mt-2">Generating summary...</p>
+            </div>
+
+            <div id="summary" class="card mt-3 p-3">Summary will be generated here.</div>
+          </div>
+
+         
+          <div id="chatbot-mode" class="mode-content hidden">
+            <div class="chat-container card">
+              <div id="chat-messages" class="card-body"></div>
+              <div class="card-footer">
+                <div class="input-group">
+                  <input type="text" id="chat-input" class="form-control" placeholder="Ask me anything..." />
+                  <button id="send-message" class="btn btn-primary">
+                    <i class="bi bi-send"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="loader text-center my-4 d-none" id="chatbot-loader">
+              <div class="spinner-border text-primary"></div>
+              <p class="mt-2">Processing your question...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/popup.js"></script>
+    <script src="scripts/chatbot.js"></script>
+  </body>
+</html>
+-->
