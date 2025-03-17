@@ -142,6 +142,20 @@ document.addEventListener("DOMContentLoaded", function () {
         { target: { tabId: tabs[0].id }, function: getSelectedOrFullText },
         (results) => {
           if (results && results[0]) {
+            if (results[0].result.error) {
+              summaryLoader.style.display = "none";
+              // Create a restricted site message
+              const restrictedMessage = document.createElement("div");
+              restrictedMessage.className = "restricted-site-message";
+              restrictedMessage.innerHTML = `
+                <h3>⚠️ Restricted Site</h3>
+                <p>${results[0].result.error}</p>
+              `;
+              summary.innerHTML = "";
+              summary.appendChild(restrictedMessage);
+              return;
+            }
+
             const { text, isSelected } = results[0].result;
             fetchSummary(
               text,
@@ -162,6 +176,47 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function getSelectedOrFullText() {
+    // Check for restricted sites
+    const restrictedDomains = [
+      "netflix.com",
+      "youtube.com",
+      "hulu.com",
+      "amazon.com/video",
+      "disneyplus.com",
+      "primevideo.com",
+    ];
+
+    const currentDomain = window.location.hostname.toLowerCase();
+    if (restrictedDomains.some((domain) => currentDomain.includes(domain))) {
+      return {
+        error: "This extension doesn't work on streaming/video websites.",
+      };
+    }
+
+    // Check for auth pages
+    const authKeywords = [
+      "login",
+      "signin",
+      "sign-in",
+      "signup",
+      "sign-up",
+      "register",
+      "authentication",
+      "password",
+    ];
+
+    const currentUrl = window.location.href.toLowerCase();
+    const urlContainsAuth = authKeywords.some((keyword) =>
+      currentUrl.includes(keyword)
+    );
+
+    if (urlContainsAuth) {
+      return {
+        error:
+          "This extension doesn't work on login/signup pages for security reasons.",
+      };
+    }
+
     const selectedText = window.getSelection().toString();
     if (selectedText) {
       return { text: selectedText, isSelected: true };

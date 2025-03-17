@@ -24,6 +24,9 @@ document.addEventListener("DOMContentLoaded", function () {
     e.preventDefault();
     loginForm.classList.remove("hidden");
     signupForm.classList.add("hidden");
+    // Clear any existing error messages
+    loginError.textContent = "";
+    signupError.textContent = "";
   });
 
   // Show signup form
@@ -31,6 +34,9 @@ document.addEventListener("DOMContentLoaded", function () {
     e.preventDefault();
     signupForm.classList.remove("hidden");
     loginForm.classList.add("hidden");
+    // Clear any existing error messages
+    loginError.textContent = "";
+    signupError.textContent = "";
   });
 
   // Handle login
@@ -40,6 +46,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!email || !password) {
       loginError.textContent = "Please fill in all fields";
+      loginError.style.display = "block";
       return;
     }
 
@@ -55,14 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
         credentials: "include",
       });
 
-      const contentType = response.headers.get("content-type");
-      let data;
-
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = { message: await response.text() };
-      }
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || "Authentication failed");
@@ -73,9 +73,11 @@ document.addEventListener("DOMContentLoaded", function () {
         showAppInterface();
       } else {
         loginError.textContent = data.message || "Login failed";
+        loginError.style.display = "block";
       }
     } catch (error) {
       loginError.textContent = error.message || "Error connecting to server";
+      loginError.style.display = "block";
       console.error("Login error:", error);
     }
   });
@@ -88,6 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (!name || !email || !password) {
       signupError.textContent = "Please fill in all fields";
+      signupError.style.display = "block";
       return;
     }
 
@@ -103,14 +106,7 @@ document.addEventListener("DOMContentLoaded", function () {
         credentials: "include",
       });
 
-      const contentType = response.headers.get("content-type");
-      let data;
-
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = { message: await response.text() };
-      }
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || "Signup failed");
@@ -121,9 +117,11 @@ document.addEventListener("DOMContentLoaded", function () {
         showAppInterface();
       } else {
         signupError.textContent = data.message || "Signup failed";
+        signupError.style.display = "block";
       }
     } catch (error) {
       signupError.textContent = error.message || "Error connecting to server";
+      signupError.style.display = "block";
       console.error("Signup error:", error);
     }
   });
@@ -160,14 +158,7 @@ document.addEventListener("DOMContentLoaded", function () {
         credentials: "include",
       });
 
-      const contentType = response.headers.get("content-type");
-      let data;
-
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = { message: await response.text() };
-      }
+      const data = await response.json();
 
       if (response.ok) {
         showAuthInterface();
@@ -187,14 +178,7 @@ document.addEventListener("DOMContentLoaded", function () {
         credentials: "include",
       });
 
-      const contentType = response.headers.get("content-type");
-      let data;
-
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = { isAuthenticated: false, message: await response.text() };
-      }
+      const data = await response.json();
 
       if (response.ok && data.isAuthenticated) {
         displayUserInfo(data.user);
@@ -235,5 +219,8 @@ document.addEventListener("DOMContentLoaded", function () {
     authContainer.classList.remove("hidden");
     loginForm.classList.remove("hidden");
     signupForm.classList.add("hidden");
+    // Clear any existing error messages
+    loginError.textContent = "";
+    signupError.textContent = "";
   }
 });

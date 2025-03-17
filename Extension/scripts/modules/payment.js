@@ -57,11 +57,13 @@ export async function fetchPlans() {
     addPaymentEventListeners();
   } catch (error) {
     console.error("Failed to fetch plans:", error);
-    plansContainer.innerHTML = `
-      <div class="empty-state">
-        <p>Error loading subscription plans. Please try again.</p>
-      </div>
-    `;
+    if (plansContainer) {
+      plansContainer.innerHTML = `
+        <div class="empty-state">
+          <p>Error loading subscription plans. Please try again.</p>
+        </div>
+      `;
+    }
   }
 }
 
@@ -134,7 +136,12 @@ async function createCheckoutSession(planId) {
 }
 
 export async function fetchPaymentHistory() {
-  const paymentHistory = document.getElementById("payment-history");
+  const paymentHistoryElement = document.getElementById("payment-history");
+
+  if (!paymentHistoryElement) {
+    console.warn("Payment history element not found");
+    return;
+  }
 
   try {
     const response = await fetch("http://localhost:3000/payment/history", {
@@ -148,7 +155,7 @@ export async function fetchPaymentHistory() {
     const data = await response.json();
 
     if (!data.paymentHistory || data.paymentHistory.length === 0) {
-      paymentHistory.innerHTML = `
+      paymentHistoryElement.innerHTML = `
         <div class="empty-state">
           <p>No payment history found.</p>
         </div>
@@ -156,7 +163,7 @@ export async function fetchPaymentHistory() {
       return;
     }
 
-    paymentHistory.innerHTML = data.paymentHistory
+    paymentHistoryElement.innerHTML = data.paymentHistory
       .map((payment) => {
         const date = new Date(payment.date);
         const formattedDate = date.toLocaleDateString("en-US", {
@@ -177,10 +184,12 @@ export async function fetchPaymentHistory() {
       .join("");
   } catch (error) {
     console.error("Failed to fetch payment history:", error);
-    paymentHistory.innerHTML = `
-      <div class="empty-state">
-        <p>Error loading payment history. Please try again.</p>
-      </div>
-    `;
+    if (paymentHistoryElement) {
+      paymentHistoryElement.innerHTML = `
+        <div class="empty-state">
+          <p>Error loading payment history. Please try again.</p>
+        </div>
+      `;
+    }
   }
 }
