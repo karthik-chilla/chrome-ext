@@ -15,23 +15,6 @@ const GROQ_MODELS = {
   mixtral: "mixtral-8x7b-32768",
 };
 
-const { pipeline } = require("@xenova/transformers");
-
-let t5Summarizer;
-
-async function loadModel() {
-  try {
-    console.log("Loading T5 model...");
-    t5Summarizer = await pipeline("summarization", "Xenova/t5-small");
-    console.log("T5 model loaded successfully!");
-  } catch (error) {
-    console.error("Failed to load T5 model:", error);
-    process.exit(1);
-  }
-}
-
-loadModel();
-
 function truncateText(text, maxTokens = 30000) {
   return text.split(" ").slice(0, maxTokens).join(" ");
 }
@@ -93,67 +76,6 @@ async function generateSummaryWithGroq(text, type, modelType) {
       error.response?.data || error.message
     );
     throw new Error(`Failed to generate summary with ${modelType}`);
-  }
-}
-
-
-async function generateSummaryWithT5(text, type) {
-  try {
-    console.log("Generating summary using T5...");
-
-    // Improved text preprocessing
-    const cleanText = text
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    // Calculate appropriate length based on type
-    const maxLength = type === "short" ? 50 : 150;
-    const minLength = type === "short" ? 30 : 100;
-
-    // Split text into chunks if it's too long
-    const maxInputLength = 512; // T5's max input length
-    const chunks = [];
-    const words = cleanText.split(' ');
-    
-    for (let i = 0; i < words.length; i += maxInputLength) {
-      chunks.push(words.slice(i, i + maxInputLength).join(' '));
-    }
-
-    // Generate summary for each chunk
-    const summaries = await Promise.all(
-      chunks.map(async (chunk) => {
-        const result = await t5Summarizer(chunk, {
-          max_length: maxLength,
-          min_length: minLength,
-          length_penalty: 2.0,
-          num_beams: 6, // Increased for better quality
-          early_stopping: true,
-          no_repeat_ngram_size: 3,
-          do_sample: false // Deterministic generation
-        });
-
-        return result[0].summary_text;
-      })
-    );
-
-    // Combine summaries if there were multiple chunks
-    let finalSummary = summaries.join(' ');
-
-    // Post-process the summary
-    finalSummary = finalSummary
-      .replace(/\s+/g, ' ')
-      .trim()
-      .replace(/^"|"$/g, '') // Remove quotes if present
-      .replace(/\.$/, '') + '.'; // Ensure it ends with a period
-
-    if (!finalSummary) {
-      throw new Error("T5 model failed to generate a summary");
-    }
-
-    return finalSummary;
-  } catch (error) {
-    console.error("T5 Error:", error.message);
-    throw new Error("Failed to generate summary with T5");
   }
 }
 
@@ -248,8 +170,6 @@ async function summarise(req, res) {
           throw new Error("Gemini API key not configured");
         }
         generatedSummary = await generateSummaryWithGemini(text, type);
-      } else if (aiProvider === "t5") {
-        generatedSummary = await generateSummaryWithT5(text, type);
       } else if (Object.keys(GROQ_MODELS).includes(aiProvider)) {
         if (!GROQ_API_KEY) {
           throw new Error("Groq API key not configured");
@@ -366,6 +286,5 @@ async function summarise(req, res) {
     res.status(500).json({ error: "Error fetching summary" });
   }
 }
-
 
 module.exports = summarise;

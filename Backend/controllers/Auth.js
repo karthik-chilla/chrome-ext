@@ -23,18 +23,23 @@ const setJWTCookie = (res, token) => {
 };
 
 async function handleGoogleCallback(req, res) {
-  const token = generateToken(req.user);
-  setJWTCookie(res, token);
+  try {
+    const token = generateToken(req.user);
+    setJWTCookie(res, token);
 
-  res.send(`
-    <html>
-      <body>
-        <script>
-          window.close();
-        </script>
-      </body>
-    </html>
-  `);
+    res.send(`
+      <html>
+        <body>
+          <script>
+            window.close();
+          </script>
+        </body>
+      </html>
+    `);
+  } catch (error) {
+    console.error("Google callback error:", error);
+    res.status(500).send("Authentication failed");
+  }
 }
 
 async function signup(req, res) {

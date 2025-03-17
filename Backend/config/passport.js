@@ -5,7 +5,6 @@ const JwtStrategy = require("passport-jwt").Strategy;
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
 
-// JWT cookie extractor
 const cookieExtractor = (req) => {
   let token = null;
   if (req && req.cookies) {
@@ -92,6 +91,7 @@ passport.use(
   )
 );
 
+// Local Strategy
 passport.use(
   new LocalStrategy(
     { usernameField: "email" },
@@ -123,16 +123,4 @@ passport.use(
   )
 );
 
-// Required for maintaining login session
-passport.serializeUser((user, done) => {
-  done(null, user.id);
-});
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await User.findById(id);
-    done(null, user);
-  } catch (err) {
-    done(err, null);
-  }
-});
+module.exports = passport;
