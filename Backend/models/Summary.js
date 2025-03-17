@@ -26,11 +26,11 @@ const summarySchema = new mongoose.Schema({
   longSummary: String,
   aiProvider_short: {
     type: String,
-    enum: ["gemini", "gemma", "llama", "mixtral", "t5"]
+    enum: ["gemini", "gemma", "llama", "mixtral"]
   },
   aiProvider_long: {
     type: String,
-    enum: ["gemini", "gemma", "llama", "mixtral", "t5"]
+    enum: ["gemini", "gemma", "llama", "mixtral"]
   },
   lastAccessed: { type: Date, default: Date.now },
   tags: [{ type: mongoose.Schema.Types.ObjectId, ref: "Tag", default: [] }],
