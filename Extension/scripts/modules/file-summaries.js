@@ -17,7 +17,7 @@ export async function initializeFileSummaries() {
     }
 
     const file = fileUpload.files[0];
-    
+
     // Check file size
     if (file.size > 10 * 1024 * 1024) {
       showToast("File size must be less than 10MB", "error");
@@ -25,12 +25,15 @@ export async function initializeFileSummaries() {
     }
 
     // Check file extension
-    const allowedExtensions = ['.txt', '.doc', '.docx', '.pdf'];
-    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-    
+    const allowedExtensions = [".txt", ".doc", ".docx", ".pdf"];
+    const fileExtension = "." + file.name.split(".").pop().toLowerCase();
+
     if (!allowedExtensions.includes(fileExtension)) {
-      showToast("This file format is not supported. Please upload .txt, .doc, .docx, or .pdf files only.", "error");
-      fileUpload.value = ''; // Clear the file input
+      showToast(
+        "This file format is not supported. Please upload .txt, .doc, .docx, or .pdf files only.",
+        "error"
+      );
+      fileUpload.value = ""; // Clear the file input
       return;
     }
 
@@ -91,11 +94,7 @@ export async function initializeFileSummaries() {
               </button>
             </div>
           `;
-
-
         }
-
-        
       } else {
         throw new Error(data.error || "Failed to generate summary");
       }
@@ -124,7 +123,10 @@ export async function initializeFileSummaries() {
       });
       const profile = await profileResponse.json();
 
-      if (profile.subscription !== "premium" && profile.role !== "super_admin") {
+      if (
+        profile.subscription !== "premium" &&
+        profile.role !== "super_admin"
+      ) {
         // Show premium required message and redirect to payment
         showToast("⭐ Upgrade to Premium to download summaries");
         return;
@@ -180,86 +182,86 @@ export async function initializeFileSummaries() {
   });
 
   // Handle hash change for payment redirect
-  window.addEventListener('hashchange', handlePaymentRedirect);
-  
+  window.addEventListener("hashchange", handlePaymentRedirect);
+
   // Check if we're redirected to payment on load
-  if (window.location.hash === '#payment') {
+  if (window.location.hash === "#payment") {
     handlePaymentRedirect();
   }
 }
 
 function handlePaymentRedirect() {
-  if (window.location.hash === '#payment') {
-    const paymentSection = document.getElementById('payment-content');
-    const paymentLink = document.getElementById('payment');
-    const sections = document.querySelectorAll('.content-section');
-    const links = document.querySelectorAll('.sidebar a');
-    
+  if (window.location.hash === "#payment") {
+    const paymentSection = document.getElementById("payment-content");
+    const paymentLink = document.getElementById("payment");
+    const sections = document.querySelectorAll(".content-section");
+    const links = document.querySelectorAll(".sidebar a");
+
     // Hide all sections and remove active class from links
-    sections.forEach(section => section.classList.add('hidden'));
-    links.forEach(link => link.classList.remove('active'));
-    
+    sections.forEach((section) => section.classList.add("hidden"));
+    links.forEach((link) => link.classList.remove("active"));
+
     // Show payment section and activate payment link
     if (paymentSection) {
-      paymentSection.classList.remove('hidden');
-      paymentLink?.classList.add('active');
-      
+      paymentSection.classList.remove("hidden");
+      paymentLink?.classList.add("active");
+
       // Import and call fetchPlans
-      import('./payment.js').then(module => {
+      import("./payment.js").then((module) => {
         module.fetchPlans();
         module.fetchPaymentHistory();
       });
-      
+
       // Scroll to top of payment section
-      paymentSection.scrollIntoView({ behavior: 'smooth' });
+      paymentSection.scrollIntoView({ behavior: "smooth" });
     }
   }
 }
 
-function showToast(message, type = 'info') {
+function showToast(message, type = "info") {
   // Remove any existing toasts
-  const existingToast = document.querySelector('.toast');
+  const existingToast = document.querySelector(".toast");
   if (existingToast) {
     existingToast.remove();
   }
 
   // Create toast container if it doesn't exist
-  let toastContainer = document.querySelector('.toast-container');
+  let toastContainer = document.querySelector(".toast-container");
   if (!toastContainer) {
-    toastContainer = document.createElement('div');
-    toastContainer.className = 'toast-container';
+    toastContainer = document.createElement("div");
+    toastContainer.className = "toast-container";
     document.body.appendChild(toastContainer);
   }
 
   // Create new toast
-  const toast = document.createElement('div');
+  const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
-  
+
   // Add icon based on type
-  const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-  
+  const icon = type === "error" ? "❌" : type === "success" ? "✅" : "ℹ️";
+
   toast.innerHTML = `
     <div class="toast-content">
       <span class="toast-icon">${icon}</span>
       <span class="toast-message">${message}</span>
     </div>
   `;
-  
+
   toastContainer.appendChild(toast);
 
   // Trigger animation
   setTimeout(() => {
-    toast.classList.add('show');
+    toast.classList.add("show");
   }, 100);
 
   // Remove toast after delay
   setTimeout(() => {
-    toast.classList.remove('show');
+    toast.classList.remove("show");
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
 
 function redirectToPayment() {
-  window.location.hash = '#payment';
+  window.location.hash = "#payment";
   handlePaymentRedirect();
 }

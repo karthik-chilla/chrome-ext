@@ -1,6 +1,6 @@
 const express = require("express");
 const { connectToDb } = require("./connection");
-const dotenv = require("dotenv").config();
+require("dotenv").config();
 const summaryRouter = require("./routes/Summary");
 const authRouter = require("./routes/auth");
 const chatRouter = require("./routes/chat");
@@ -34,6 +34,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cookieParser());
 
 // Initialize passport
+
 app.use(passport.initialize());
 
 // Routes

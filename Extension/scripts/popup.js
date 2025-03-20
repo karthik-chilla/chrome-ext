@@ -156,7 +156,7 @@ document.addEventListener("DOMContentLoaded", function () {
               return;
             }
 
-            const { text, isSelected } = results[0].result;
+            const { text } = results[0].result;
             fetchSummary(
               text,
               type,
@@ -221,7 +221,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (selectedText) {
       return { text: selectedText, isSelected: true };
     }
-    return { text: document.body.innerText.slice(0, 17000), isSelected: false };
+    return { text: document.body.innerText.slice(0, 7000), isSelected: false };
   }
 
   function createSaveButton() {

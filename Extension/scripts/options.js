@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   const { fetchPlans, fetchPaymentHistory } = await import(
     "./modules/payment.js"
   );
+  const { showUserDetails } = await import("./modules/ui.js");
   const { initializeFileSummaries } = await import(
     "./modules/file-summaries.js"
   );
@@ -73,7 +74,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (authResult) {
     currentUserRole = authResult;
     if (currentUserRole === "super_admin") {
-      
       adminPanelLink.classList.remove("hidden");
       adminPanelLink.classList.add("visible");
       // Hide favorite AI box for admin as it's not relevant

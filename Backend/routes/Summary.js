@@ -1,5 +1,4 @@
 const express = require("express");
-const session = require("express-session");
 const summarise = require("../controllers/Summary");
 const { Summary, Tag } = require("../models/Summary");
 const User = require("../models/User");
@@ -132,7 +131,7 @@ router.get("/user-analytics", async (req, res) => {
 
     const dailySummaries = {};
     const domains = {};
-    const summaryTypes = { short: 0, long: 0 };
+    //const summaryTypes = { short: 0, long: 0 };
     const aiProviders = {};
 
     summaries.forEach((summary) => {
@@ -238,12 +237,11 @@ router.post(
         url: mockReq.body.url,
         domain: mockReq.body.domain,
       };
-  
+
       await User.findByIdAndUpdate(req.user._id, {
         $inc: { summaryCount: 1 },
         $push: { summaryHistory: summaryHistoryEntry },
       });
-      
     } catch (error) {
       console.error("File summary error:", error);
       res.status(500).json({ error: "Failed to process file summary" });

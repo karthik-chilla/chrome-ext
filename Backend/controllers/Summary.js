@@ -19,15 +19,6 @@ function truncateText(text, maxTokens = 30000) {
   return text.split(" ").slice(0, maxTokens).join(" ");
 }
 
-function isValidUrl(url) {
-  try {
-    new URL(url);
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
-
 async function generateSummaryWithGemini(text, type) {
   const prompt = `Summarize the following content in ${
     type === "short" ? "1-2 sentences" : "2-3 paragraphs"
