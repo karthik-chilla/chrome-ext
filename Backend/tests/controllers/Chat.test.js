@@ -31,10 +31,6 @@ describe("Chat Controller", () => {
     };
   });
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   it("should return AI-generated response", async () => {
     const mockGenerateContent = {
       response: { text: jest.fn().mockResolvedValue("AI response") },
@@ -50,7 +46,9 @@ describe("Chat Controller", () => {
 
     await chatWithPage(mockReq, mockRes);
 
-    expect(mockRes.json).toHaveBeenCalledWith({ response: "AI response" });
+    expect(mockRes.json).toHaveBeenCalledWith({
+      response: "<p>AI response</p>\n", // Adjusted to match Markdown-to-HTML conversion
+    });
   });
 
   it("should handle errors", async () => {
@@ -64,6 +62,7 @@ describe("Chat Controller", () => {
 
     await chatWithPage(mockReq, mockRes);
 
+    expect(mockRes.status).toHaveBeenCalledTimes(1); // Ensure status is called
     expect(mockRes.status).toHaveBeenCalledWith(500);
     expect(mockRes.json).toHaveBeenCalledWith({
       error: "Error processing chat request",

@@ -13,12 +13,12 @@ const generateToken = (user) => {
 // Helper function to set JWT cookie
 const setJWTCookie = (res, token) => {
   res.cookie("jwt", token, {
-    httpOnly: true,
-    secure: false, // Set to true in production
-    sameSite: "lax",
+    // httpOnly: true,
+    //secure: false, // Set to true in production
+    //sameSite: "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    path: "/",
-    domain: "localhost",
+    // path: "/",
+    // domain: "localhost",
   });
 };
 
@@ -53,22 +53,16 @@ async function signup(req, res) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Check if this is the first user
-    const userCount = await User.countDocuments();
-    const role = userCount === 0 ? "super_admin" : "user";
-
-    // Set subscription to premium for super_admin
-    const subscription = role === "super_admin" ? "premium" : "free";
-
     const now = new Date();
 
     user = new User({
       name,
       email,
       password: hashedPassword,
-      role,
-      subscription,
+      role: "user",
+      subscription: "free",
       lastLogin: now,
+      verified: false,
       loginHistory: [
         {
           timestamp: now,
@@ -80,22 +74,26 @@ async function signup(req, res) {
 
     await user.save();
 
-    const token = generateToken(user);
-    setJWTCookie(res, token);
+    // Send verification email
+    try {
+      await fetch("http://localhost:5001/send-verification-mail", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+    } catch (error) {
+      console.error("Error sending verification email:", error);
+    }
 
     return res.status(201).json({
-      message: "Signup successful",
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        picture: user.picture,
-        role: user.role,
-        subscription: user.subscription,
-      },
+      message:
+        "Signup successful. Please check your email to verify your account.",
+      redirectToLogin: true,
     });
   } catch (err) {
-    // console.error("Signup error:", err);
+    console.error("Signup error:", err);
     res.status(500).json({ message: "Server error" });
   }
 }
@@ -110,6 +108,14 @@ async function login(req, res, next) {
         return res
           .status(401)
           .json({ message: info.message || "Authentication failed" });
+      }
+
+      // Check if email is verified for non-Google users
+      if (!user.googleId && !user.verified) {
+        return res.status(403).json({
+          message: "Please verify your email before logging in",
+          needsVerification: true,
+        });
       }
 
       // Update last login and add to login history
@@ -187,10 +193,59 @@ async function getStatus(req, res) {
   });
 }
 
+async function sendVerificationEmail(req, res) {
+  try {
+    const { email } = req.body;
+    const response = await fetch(
+      "http://localhost:5001/send-verification-mail",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      }
+    );
+    if (response.ok) {
+      return res.status(200).json({ message: "Verification email sent" });
+    }
+    return res
+      .status(400)
+      .json({ message: "Failed to send verification email" });
+  } catch (error) {
+    console.error("Send verification email error:", error);
+    res.status(500).json({ message: error.message });
+  }
+}
+
+async function verifyEmail(req, res) {
+  try {
+    console.log("Verify email request:", req.body);
+
+    const { email, verified } = req.body;
+    console.log("Email:", email);
+    console.log("Verified:", verified);
+    const user = await User.findOneAndUpdate(
+      { email },
+      { verified },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
+    return res.status(200).json({ message: "Email verified", success: true });
+  } catch (error) {
+    console.error("Email verification error:", error);
+    res.status(500).json({ message: error.message });
+  }
+}
+
 module.exports = {
   handleGoogleCallback,
   signup,
   login,
   logout,
   getStatus,
+  sendVerificationEmail,
+  verifyEmail,
 };

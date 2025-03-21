@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Clear summary when AI provider changes
   aiProviderSelect.addEventListener("change", function () {
-    // Clear the summary
     summary.textContent = "Summary will be generated here.";
     // Remove save button if it exists
     const existingSaveButton = document.querySelector(".save-button");
@@ -105,7 +104,6 @@ document.addEventListener("DOMContentLoaded", function () {
     chatbotModeBtn.classList.remove("active");
     summaryMode.classList.remove("hidden");
     chatbotMode.classList.add("hidden");
-    // Clear any premium messages
     summary.textContent = "Summary will be generated here.";
   });
 
@@ -129,10 +127,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const type = summaryTypeCheckbox.checked ? "long" : "short";
     const aiProvider = aiProviderSelect.value;
 
-    if (!aiProvider || aiProvider === "selectone") {
-      summary.innerText = "Please select an AI provider first.";
-      return;
-    }
+    // if (!aiProvider || aiProvider === "selectone") {
+    //   summary.innerText = "Please select an AI provider first.";
+    //   return;
+    // }
 
     summaryLoader.style.display = "block";
     summary.innerText = "";
@@ -156,7 +154,7 @@ document.addEventListener("DOMContentLoaded", function () {
               return;
             }
 
-            const { text } = results[0].result;
+            const { text, isSelected } = results[0].result;
             fetchSummary(
               text,
               type,

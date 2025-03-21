@@ -44,11 +44,21 @@ async function chatWithPage(req, res) {
       
       Here is the content from the webpage (use this as context when relevant):
       ${pageContent}
-
+ 
       Recent conversation history:
       ${historyContext}
       
       Current user question: ${message}
+      
+      Important instructions:
+      1. If the question is about the webpage content, use the provided content to answer accurately.
+      2. If the question refers to previous messages in the conversation history, use that context to provide relevant answers.
+      3. If the question is general knowledge or unrelated to the webpage, answer it using your knowledge.
+      4. You can answer ANY question, whether it's related to the webpage or not.
+      5. Be helpful, informative, and conversational in your responses.
+      6. If you're unsure if something is on the webpage, you can say "Based on my knowledge..." instead of "I don't see that on the webpage."
+      7. Always prioritize being helpful over stating limitations.
+      8. Maintain conversation continuity by acknowledging previous context when relevant.
     `;
 
     // Generate response
@@ -64,7 +74,7 @@ async function chatWithPage(req, res) {
 
     res.json({ response: htmlResponse });
   } catch (error) {
-    console.error("❌ Chat Error:", error.message || error);
+    console.error("❌ Chat Error:", error);
     res.status(500).json({ error: "Error processing chat request" });
   }
 }

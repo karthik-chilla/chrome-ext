@@ -1,0 +1,1 @@
+This is an email server which will help us to send email to the users.

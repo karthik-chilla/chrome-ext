@@ -65,7 +65,51 @@ document.addEventListener("DOMContentLoaded", function () {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Authentication failed");
+        if (data.needsVerification) {
+          loginError.textContent = data.message;
+          // Add resend verification button with loading state
+          const resendButton = document.createElement("button");
+          resendButton.textContent = "Resend Verification Email";
+          resendButton.style.marginTop = "10px";
+          resendButton.onclick = async () => {
+            // Show loading state
+            const originalText = resendButton.textContent;
+            resendButton.disabled = true;
+            resendButton.innerHTML =
+              '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...';
+
+            try {
+              const resendResponse = await fetch(
+                "http://localhost:3000/auth/sendVerificationEmail",
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ email }),
+                  credentials: "include",
+                }
+              );
+              if (resendResponse.ok) {
+                loginError.textContent =
+                  "Verification email sent. Please check your inbox.";
+                resendButton.remove(); // Remove the button after successful send
+              } else {
+                throw new Error("Failed to send verification email");
+              }
+            } catch (error) {
+              loginError.textContent =
+                "Error sending verification email. Please try again.";
+              // Reset button state
+              resendButton.disabled = false;
+              resendButton.textContent = originalText;
+            }
+          };
+          loginError.appendChild(resendButton);
+        } else {
+          throw new Error(data.message || "Authentication failed");
+        }
+        return;
       }
 
       if (data.message === "Login successful") {
@@ -112,9 +156,14 @@ document.addEventListener("DOMContentLoaded", function () {
         throw new Error(data.message || "Signup failed");
       }
 
-      if (data.message === "Signup successful") {
-        displayUserInfo(data.user);
-        showAppInterface();
+      if (data.redirectToLogin) {
+        signupError.style.color = "#28a745"; // Success color
+        signupError.textContent = data.message;
+        setTimeout(() => {
+          loginForm.classList.remove("hidden");
+          signupForm.classList.add("hidden");
+          signupError.textContent = "";
+        }, 1000);
       } else {
         signupError.textContent = data.message || "Signup failed";
         signupError.style.display = "block";
