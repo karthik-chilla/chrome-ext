@@ -332,15 +332,17 @@
 // }
 
 // Summaries related functions
+const IP_ADD = process.env.IP_ADD;
+
 export async function fetchPastSummaries(query = "") {
   const pastSummariesList = document.getElementById("past-summaries-list");
 
   try {
     const endpoint = query
-      ? `http://localhost:3000/summarize/search?query=${encodeURIComponent(
+      ? `http://${IP_ADD}:3000/summarize/search?query=${encodeURIComponent(
           query
         )}`
-      : `http://localhost:3000/summaries/summaries`;
+      : `http://${IP_ADD}:3000/summaries/summaries`;
 
     const response = await fetch(endpoint, {
       credentials: "include",

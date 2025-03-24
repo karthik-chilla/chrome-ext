@@ -3,11 +3,13 @@ document.addEventListener("DOMContentLoaded", function () {
   const sendButton = document.getElementById("send-message");
   const chatMessages = document.getElementById("chat-messages");
   const chatbotLoader = document.getElementById("chatbot-loader");
+  const IP_ADD = process.env.IP_ADD;
+
 
   // Check if user is authenticated and has premium subscription before allowing chat
   async function checkAuthAndSubscription(callback) {
     try {
-      const profileResponse = await fetch("http://localhost:3000/profile", {
+      const profileResponse = await fetch(`http://${IP_ADD}:3000/profile`, {
         credentials: "include",
       });
       const profile = await profileResponse.json();
@@ -83,7 +85,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function processChat(userMessage, pageContent, url) {
-    fetch("http://localhost:3000/chat", {
+    fetch(`http://${IP_ADD}:3000/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

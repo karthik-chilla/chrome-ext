@@ -1,4 +1,6 @@
 console.log("✅ Content script loaded!");
+const IP_ADD = process.env.IP_ADD;
+
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "summarizePage") {
@@ -90,7 +92,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (selectedText) {
       // Send selected text to the backend
-      fetch("http://localhost:3000/summarize", {
+      fetch(`http://${IP_ADD}:3000/summarize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,7 +116,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const maxTokens = 30000; // Adjust based on API limits
       const truncatedText = fullText.split(" ").slice(0, maxTokens).join(" ");
 
-      fetch("http://localhost:3000/summarize", {
+      fetch(`http://${IP_ADD}:3000/summarize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

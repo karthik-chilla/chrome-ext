@@ -2,7 +2,7 @@ const passport = require("passport");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-
+const IP_ADD = process.env.IP_ADD;
 // Helper function to generate JWT token
 const generateToken = (user) => {
   return jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -76,7 +76,7 @@ async function signup(req, res) {
 
     // Send verification email
     try {
-      await fetch("http://localhost:5001/send-verification-mail", {
+      await fetch(`http://${IP_ADD}:5001/send-verification-mail`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -174,7 +174,7 @@ async function logout(req, res) {
 
   res.clearCookie("jwt", {
     path: "/",
-    domain: "localhost",
+    domain: "51.21.170.204",
   });
   res.status(200).json({ message: "Logged out successfully" });
 }
@@ -197,7 +197,7 @@ async function sendVerificationEmail(req, res) {
   try {
     const { email } = req.body;
     const response = await fetch(
-      "http://localhost:5001/send-verification-mail",
+      `http://${IP_ADD}:5001/send-verification-mail`,
       {
         method: "POST",
         headers: {

@@ -1,4 +1,5 @@
 // File summaries related functions
+const IP_ADD = process.env.IP_ADD;
 export async function initializeFileSummaries() {
   const fileUpload = document.getElementById("file-upload");
   const uploadButton = document.getElementById("upload-button");
@@ -51,7 +52,7 @@ export async function initializeFileSummaries() {
       formData.append("type", type);
 
       const response = await fetch(
-        "http://localhost:3000/summarize/summarize/file-summary",
+        `http://${IP_ADD}:3000/summarize/summarize/file-summary`,
         {
           method: "POST",
           credentials: "include",
@@ -118,7 +119,7 @@ export async function initializeFileSummaries() {
 
     try {
       // First check user's subscription
-      const profileResponse = await fetch("http://localhost:3000/profile", {
+      const profileResponse = await fetch(`http://${IP_ADD}:3000/profile`, {
         credentials: "include",
       });
       const profile = await profileResponse.json();
@@ -133,7 +134,7 @@ export async function initializeFileSummaries() {
       }
 
       const response = await fetch(
-        "http://localhost:3000/summarize/download-file-summary",
+        `http://${IP_ADD}:3000/summarize/download-file-summary`,
         {
           method: "POST",
           headers: {

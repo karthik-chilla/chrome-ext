@@ -1,5 +1,7 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const User = require("../models/User");
+const IP_ADD = process.env.IP_ADD;
+
 
 async function getPlans(req, res) {
   // Return empty array for super_admin
@@ -68,8 +70,8 @@ async function createCheckoutSession(req, res) {
         },
       ],
       mode: "payment",
-      success_url: `http://localhost:3000/payment/success?session_id={CHECKOUT_SESSION_ID}&token=${req.cookies.jwt}`,
-      cancel_url: `http://localhost:3000/payment/cancel?token=${req.cookies.jwt}`,
+      success_url: `http://${IP_ADD}:3000/payment/success?session_id={CHECKOUT_SESSION_ID}&token=${req.cookies.jwt}`,
+      cancel_url: `http://${IP_ADD}:3000/payment/cancel?token=${req.cookies.jwt}`,
       client_reference_id: req.user._id.toString(),
       metadata: {
         userId: req.user._id.toString(),

@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import sendMail from "./index.js";
 import cors from "cors";
 import dotenv from "dotenv";
+const IP_ADD = process.env.IP_ADD;
 
 dotenv.config();
 
@@ -10,9 +11,9 @@ const app = express();
 app.use(
   cors({
     origin: [
-      "http://localhost:3000",
-      "http://localhost:5000",
-      "http://localhost:5001",
+      `http://${IP_ADD}:3000`,
+      `http://${IP_ADD}:5000`,
+      `http://${IP_ADD}:5001`,
     ],
     credentials: true,
   })
@@ -38,7 +39,7 @@ app.post("/send-verification-mail", async (req, res) => {
       expiresIn: "1d",
     });
 
-    const verificationUrl = `http://localhost:5001/verify-email?token=${token}`;
+    const verificationUrl = `http://${IP_ADD}:5001/verify-email?token=${token}`;
 
     const html = `
       <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
@@ -86,7 +87,7 @@ app.get("/verify-email", async (req, res) => {
       return res.status(400).json({ message: "Invalid token" });
     }
 
-    const response = await fetch("http://localhost:3000/auth/verifyEmail", {
+    const response = await fetch(`http://${IP_ADD}:3000/auth/verifyEmail`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -251,7 +252,7 @@ app.post("/send-reset-password-mail", async (req, res) => {
     const token = jwt.sign({ email }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
-    const link = `http://localhost:3000/reset-password?token=${token}`;
+    const link = `http://${IP_ADD}:3000/reset-password?token=${token}`;
     const subject = "Reset your password";
     const text = `Click this link to reset your password: ${link}`;
     const html = `<p>Click <a href="${link}">here</a> to reset your password</p>`;

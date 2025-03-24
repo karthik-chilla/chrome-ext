@@ -1,9 +1,11 @@
 // Tags related functions
+const IP_ADD = process.env.IP_ADD;
+
 export async function fetchTags() {
   const tagsList = document.getElementById("tags-list");
 
   try {
-    const response = await fetch("http://localhost:3000/summarize/tags", {
+    const response = await fetch(`http://${IP_ADD}:3000/summarize/tags`, {
       credentials: "include",
     });
 

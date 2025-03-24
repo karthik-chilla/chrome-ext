@@ -1,5 +1,6 @@
 // Analytics related functions
 let charts = {};
+const IP_ADD = process.env.IP_ADD;
 
 function destroyCharts() {
   Object.values(charts).forEach((chart) => {
@@ -13,7 +14,7 @@ function destroyCharts() {
 export async function loadUserAnalytics() {
   try {
 
-    const profileResponse = await fetch("http://localhost:3000/profile", {
+    const profileResponse = await fetch(`http://${IP_ADD}:3000/profile`, {
       credentials: "include",
     });
     const profile = await profileResponse.json();
@@ -33,7 +34,7 @@ export async function loadUserAnalytics() {
 
     // Fetch user analytics
     const response = await fetch(
-      "http://localhost:3000/summarize/user-analytics",
+      `http://${IP_ADD}:3000/summarize/user-analytics`,
       {
         credentials: "include",
       }

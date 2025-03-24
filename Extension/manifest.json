@@ -10,7 +10,7 @@
     "cookies",
     "webNavigation"
   ],
-  "host_permissions": ["<all_urls>", "http://localhost:3000/*"],
+  "host_permissions": ["<all_urls>", "http://51.21.170.204:3000/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {

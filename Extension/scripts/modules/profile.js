@@ -1,9 +1,11 @@
 // Profile related functions
+const IP_ADD = process.env.IP_ADD;
+
 export async function fetchProfile() {
   const userInfo = document.getElementById("user-info");
 
   try {
-    const response = await fetch("http://localhost:3000/profile", {
+    const response = await fetch(`http://${IP_ADD}:3000/profile`, {
       credentials: "include",
     });
 
