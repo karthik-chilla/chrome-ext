@@ -243,7 +243,7 @@ document.addEventListener("DOMContentLoaded", function () {
           body: JSON.stringify({
             ...currentSummaryData,
             save: true,
-            response: summary.innerText
+            response: summary.innerText, // Include the existing summary
           }),
         });
 

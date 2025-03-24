@@ -296,7 +296,7 @@ router.get("/summaries", async (req, res) => {
     }
 
     const summaries = await Summary.find(filter)
-      .populate("tags")
+      .populate("tags") // before we have only reference , after populate we have the actual data
       .sort({ lastAccessed: -1 });
 
     res.json(summaries);

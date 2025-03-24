@@ -28,8 +28,8 @@ export async function fetchTags() {
         <div class="tag-item" data-tag="${tag.name}">
           <div class="tag-name">${tag.name}</div>
           <div class="tag-count">${tag.count} ${
-          tag.count === 1 ? "summary" : "summaries"
-        }</div>
+            tag.count === 1 ? "summary" : "summaries"
+          }</div>
         </div>
       `
       )
