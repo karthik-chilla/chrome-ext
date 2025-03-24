@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   // Event Listeners
   fileSummariesLink.addEventListener("click", async () => {
     try {
-      const response = await fetch(`http://${IP_ADD}:3000/profile`, {
+      const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/profile`, {
         credentials: "include",
       });
       const profile = await response.json();
@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       const searchQuery = userSearch?.value || "";
       const subscription = subscriptionFilter?.value || "";
 
-      const response = await fetch(`http://${IP_ADD}:3000/admin/users`, {
+      const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/admin/users`, {
         credentials: "include",
       });
 
@@ -301,7 +301,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (confirm("Are you sure you want to delete this user?")) {
           try {
             const response = await fetch(
-              `http://${IP_ADD}:3000/admin/users/${userId}`,
+              `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/admin/users/${userId}`,
               {
                 method: "DELETE",
                 credentials: "include",
@@ -328,7 +328,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   async function fetchAndDisplayAnalytics() {
     try {
-      const response = await fetch(`http://${IP_ADD}:3000/admin/analytics`, {
+      const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/admin/analytics`, {
         credentials: "include",
       });
 

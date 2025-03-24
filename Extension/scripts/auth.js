@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function () {
     loginError.textContent = "";
 
     try {
-      const response = await fetch(`http://${IP_ADD}:3000/auth/login`, {
+      const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -82,7 +82,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
               const resendResponse = await fetch(
-                `http://${IP_ADD}:3000/auth/sendVerificationEmail`,
+                `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/auth/sendVerificationEmail`,
                 {
                   method: "POST",
                   headers: {
@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", function () {
     signupError.textContent = "";
 
     try {
-      const response = await fetch(`http://${IP_ADD}:3000/auth/signup`, {
+      const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/auth/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const top = screen.height / 2 - height / 2;
 
     const authWindow = window.open(
-      `http://${IP_ADD}:3000/auth/google`,
+      `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/auth/google`,
       "googleAuth",
       `width=${width},height=${height},left=${left},top=${top}`
     );
@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Handle logout
   logoutButton.addEventListener("click", async function () {
     try {
-      const response = await fetch(`http://${IP_ADD}:3000/auth/logout`, {
+      const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/auth/logout`, {
         method: "GET",
         credentials: "include",
       });
@@ -224,7 +224,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Check authentication status
   async function checkAuthStatus() {
     try {
-      const response = await fetch(`http://${IP_ADD}:3000/auth/status`, {
+      const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/auth/status`, {
         method: "GET",
         credentials: "include",
       });

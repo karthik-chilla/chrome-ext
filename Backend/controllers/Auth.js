@@ -76,7 +76,7 @@ async function signup(req, res) {
 
     // Send verification email
     try {
-      await fetch(`http://${IP_ADD}:5001/send-verification-mail`, {
+      await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:5001/send-verification-mail`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -174,7 +174,7 @@ async function logout(req, res) {
 
   res.clearCookie("jwt", {
     path: "/",
-    domain: "51.21.170.204",
+    domain: "ec2-51-21-170-204.eu-north-1.compute.amazonaws.com",
   });
   res.status(200).json({ message: "Logged out successfully" });
 }
@@ -197,7 +197,7 @@ async function sendVerificationEmail(req, res) {
   try {
     const { email } = req.body;
     const response = await fetch(
-      `http://${IP_ADD}:5001/send-verification-mail`,
+      `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:5001/send-verification-mail`,
       {
         method: "POST",
         headers: {

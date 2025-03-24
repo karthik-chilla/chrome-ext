@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js",
+    "start": "concurrently \"nodemon index.js\" \"nodemon Backend/email-server/app.js\"",
+    "start:both": "nodemon index.js & nodemon Backend/email-server/app.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch"
   },

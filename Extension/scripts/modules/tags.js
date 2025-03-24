@@ -5,7 +5,7 @@ export async function fetchTags() {
   const tagsList = document.getElementById("tags-list");
 
   try {
-    const response = await fetch(`http://${IP_ADD}:3000/summarize/tags`, {
+    const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summarize/tags`, {
       credentials: "include",
     });
 

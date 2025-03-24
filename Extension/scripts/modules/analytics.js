@@ -14,7 +14,7 @@ function destroyCharts() {
 export async function loadUserAnalytics() {
   try {
 
-    const profileResponse = await fetch(`http://${IP_ADD}:3000/profile`, {
+    const profileResponse = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/profile`, {
       credentials: "include",
     });
     const profile = await profileResponse.json();
@@ -34,7 +34,7 @@ export async function loadUserAnalytics() {
 
     // Fetch user analytics
     const response = await fetch(
-      `http://${IP_ADD}:3000/summarize/user-analytics`,
+      `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summarize/user-analytics`,
       {
         credentials: "include",
       }

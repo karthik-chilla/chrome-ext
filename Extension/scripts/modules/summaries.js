@@ -339,10 +339,10 @@ export async function fetchPastSummaries(query = "") {
 
   try {
     const endpoint = query
-      ? `http://${IP_ADD}:3000/summarize/search?query=${encodeURIComponent(
+      ? `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summarize/search?query=${encodeURIComponent(
           query
         )}`
-      : `http://${IP_ADD}:3000/summaries/summaries`;
+      : `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summaries/summaries`;
 
     const response = await fetch(endpoint, {
       credentials: "include",

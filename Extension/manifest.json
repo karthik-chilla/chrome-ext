@@ -10,7 +10,10 @@
     "cookies",
     "webNavigation"
   ],
-  "host_permissions": ["<all_urls>", "http://51.21.170.204:3000/*"],
+  "host_permissions": [
+    "<all_urls>",
+    "http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -32,11 +35,11 @@
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
   },
   "web_accessible_resources": [
-  {
-    "resources": ["scripts/chart.min.js"],
-    "matches": ["<all_urls>"]
-  }
-],
+    {
+      "resources": ["scripts/chart.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "icons": {
     "16": "images/icon16.png",
     "48": "images/icon48.png",

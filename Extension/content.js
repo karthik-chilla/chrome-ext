@@ -92,7 +92,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
     if (selectedText) {
       // Send selected text to the backend
-      fetch(`http://${IP_ADD}:3000/summarize`, {
+      fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summarize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -116,7 +116,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const maxTokens = 30000; // Adjust based on API limits
       const truncatedText = fullText.split(" ").slice(0, maxTokens).join(" ");
 
-      fetch(`http://${IP_ADD}:3000/summarize`, {
+      fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summarize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
