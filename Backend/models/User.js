@@ -6,7 +6,7 @@ const SummaryHistorySchema = new mongoose.Schema({
   url: String,
   domain: String,
 });
-
+//
 const UserSchema = new mongoose.Schema(
   {
     googleId: { type: String, unique: true, sparse: true },
