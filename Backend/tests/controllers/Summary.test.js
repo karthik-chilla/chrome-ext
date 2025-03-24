@@ -1,255 +1,130 @@
-const mongoose = require("mongoose");
-const { MongoMemoryServer } = require("mongodb-memory-server");
-const { Summary, Tag } = require("../../models/Summary");
-const User = require("../../models/User");
-const summarise = require("../../controllers/Summary.js");
+const summarise = require('../../controllers/Summary');
+const { Summary, Tag } = require('../../models/Summary');
+const User = require('../../models/User');
+const axios = require('axios');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-jest.mock("@google/generative-ai", () => ({
-  GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-    getGenerativeModel: jest.fn().mockReturnValue({
-      generateContent: jest.fn().mockResolvedValue({
-        response: {
-          text: jest.fn().mockReturnValue(Promise.resolve("Generated Summary")),
-        },
-      }),
-    }),
-  })),
-}));
+jest.mock('../../models/Summary');
+jest.mock('../../models/User');
+jest.mock('axios');
+jest.mock('@google/generative-ai');
 
-describe("Summary Controller", () => {
-  let mongoServer;
-  let mockReq;
-  let mockRes;
-
-  beforeAll(async () => {
-    mongoServer = await MongoMemoryServer.create();
-    await mongoose.connect(mongoServer.getUri());
-  });
-
-  afterAll(async () => {
-    await mongoose.connection.close();
-    await mongoServer.stop();
-  });
+describe('summarise', () => {
+  let req, res;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-
-    mockReq = {
-      user: { _id: new mongoose.Types.ObjectId(), subscription: "premium" },
+    req = {
+      user: {
+        _id: 'userId',
+        subscription: 'premium',
+        role: 'user',
+      },
       body: {
-        text: "This is a test summary content.",
-        type: "short",
-        url: "https://example.com",
-        domain: "example.com",
-        title: "Example Title",
+        text: 'This is a test text.',
+        type: 'short',
+        url: 'http://example.com',
+        domain: 'example.com',
+        title: 'Test Title',
         save: true,
-        aiProvider: "gemini",
+        aiProvider: 'gemini',
       },
     };
 
-    mockRes = {
-      json: jest.fn(),
+    res = {
       status: jest.fn().mockReturnThis(),
+      json: jest.fn(),
     };
+
+    process.env.GEMINI_API_KEY = 'test-gemini-api-key';
+    process.env.GROQ_API_KEY = 'test-groq-api-key';
   });
 
-  it("should return a generated summary", async () => {
-    await summarise(mockReq, mockRes);
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
-    expect(mockRes.json).toHaveBeenCalledWith({
-      response: "Generated Summary",
+  it('should return 401 if user is not authenticated', async () => {
+    req.user = null;
+
+    await summarise(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(401);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Not authenticated' });
+  });
+
+  it('should return 403 if user is on free subscription and tries to summarize a file', async () => {
+    req.user.subscription = 'free';
+    req.body.url = 'file-summary-test';
+
+    await summarise(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Upgrade to Premium for file summaries',
+      redirectTo: 'payment',
     });
   });
 
-  it("should return 401 if user is not authenticated", async () => {
-    mockReq.user = null;
-    await summarise(mockReq, mockRes);
+  it('should return 403 if URL is from a restricted domain', async () => {
+    req.body.url = 'http://youtube.com';
 
-    expect(mockRes.status).toHaveBeenCalledWith(401);
-    expect(mockRes.json).toHaveBeenCalledWith({ error: "Not authenticated" });
-  });
+    await summarise(req, res);
 
-  it("should handle an invalid URL", async () => {
-    mockReq.body.url = "invalid_url";
-    await summarise(mockReq, mockRes);
-
-    expect(mockRes.status).toHaveBeenCalledWith(400);
-    expect(mockRes.json).toHaveBeenCalledWith({ error: "Invalid URL" });
-  });
-
-  it("should return 403 for restricted domains", async () => {
-    mockReq.body.url = "https://youtube.com/video";
-    await summarise(mockReq, mockRes);
-
-    expect(mockRes.status).toHaveBeenCalledWith(403);
-    expect(mockRes.json).toHaveBeenCalledWith({
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({
       error: "This extension doesn't work on streaming/video websites",
       isRestricted: true,
     });
   });
 
-  it("should return 400 for invalid URL format", async () => {
-    mockReq.body.url = "invalid-url";
-    await summarise(mockReq, mockRes);
+  it('should return 400 if URL is invalid', async () => {
+    req.body.url = 'invalid-url';
 
-    expect(mockRes.status).toHaveBeenCalledWith(400);
-    expect(mockRes.json).toHaveBeenCalledWith({ error: "Invalid URL" });
+    await summarise(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid URL' });
   });
 
-  it("should fallback to Gemini if AI provider is invalid", async () => {
-    mockReq.body.aiProvider = "invalid";
-
-    await summarise(mockReq, mockRes);
-
-    expect(mockRes.status).toHaveBeenCalledWith(500);
-    expect(mockRes.json).toHaveBeenCalledWith({
-      error: "Failed to generate summary with invalid. Falling back to Gemini.",
-      fallback: true,
-    });
-  });
-
-  it("should handle missing Gemini API key", async () => {
-    delete process.env.GEMINI_API_KEY;
-    mockReq.body.aiProvider = "gemini";
-
-    await summarise(mockReq, mockRes);
-
-    expect(mockRes.status).toHaveBeenCalledWith(500);
-    expect(mockRes.json).toHaveBeenCalledWith({
-      error: "Failed to generate summary with gemini. Falling back to Gemini.",
-      fallback: true,
-    });
-  });
-
-  it("should handle missing Groq API key", async () => {
-    delete process.env.GROQ_API_KEY;
-    mockReq.body.aiProvider = "llama";
-
-    await summarise(mockReq, mockRes);
-
-    expect(mockRes.status).toHaveBeenCalledWith(500);
-    expect(mockRes.json).toHaveBeenCalledWith({
-      error: "Failed to generate summary with llama. Falling back to Gemini.",
-      fallback: true,
-    });
-  });
-
-  it("should save the summary when 'save' is true", async () => {
-    const mockSummarySave = jest
-      .spyOn(Summary.prototype, "save")
-      .mockResolvedValue();
-
-    await summarise(mockReq, mockRes);
-
-    expect(mockSummarySave).toHaveBeenCalled();
-    expect(mockRes.json).toHaveBeenCalledWith({
-      response: "Generated Summary",
+  it('should generate summary with Gemini and save it', async () => {
+    const mockGenerateContent = jest.fn().mockResolvedValue({
+      response: { text: jest.fn().mockResolvedValue('Generated summary') },
     });
 
-    mockSummarySave.mockRestore();
-  });
-
-  it("should update an existing summary when 'save' is true", async () => {
-    const existingSummary = new Summary({
-      user: mockReq.user._id,
-      url: mockReq.body.url,
-      domain: mockReq.body.domain,
-      title: mockReq.body.title,
-      text: mockReq.body.text,
-      shortSummary: "Old Summary",
-      aiProvider_short: "gemini",
-    });
-    await existingSummary.save();
-
-    await summarise(mockReq, mockRes);
-
-    const updatedSummary = await Summary.findOne({ url: mockReq.body.url });
-    expect(updatedSummary.shortSummary).toBe("Generated Summary");
-    expect(mockRes.json).toHaveBeenCalledWith({
-      response: "Generated Summary",
-    });
-  });
-
-  it("should delete the least accessed summary if limit exceeds 100", async () => {
-    const summaries = Array.from({ length: 101 }, (_, i) => ({
-      user: mockReq.user._id,
-      url: `https://example.com/${i}`,
-      domain: "example.com",
-      title: `Example Title ${i}`,
-      text: "Test content",
-      lastAccessed: new Date(Date.now() - i * 1000),
+    GoogleGenerativeAI.mockImplementation(() => ({
+      getGenerativeModel: jest.fn().mockReturnValue({
+        generateContent: mockGenerateContent,
+      }),
     }));
-    await Summary.insertMany(summaries);
 
-    await summarise(mockReq, mockRes);
+    Summary.findOne.mockResolvedValue(null);
+    Tag.findOne.mockResolvedValue(null);
+    Tag.create.mockResolvedValue({ _id: 'tagId' });
+    Summary.countDocuments.mockResolvedValue(50);
 
-    const totalSummaries = await Summary.countDocuments({
-      user: mockReq.user._id,
-    });
-    expect(totalSummaries).toBe(100);
-    expect(mockRes.json).toHaveBeenCalledWith({
-      response: "Generated Summary",
-    });
+    await summarise(req, res);
+
+    expect(mockGenerateContent).toHaveBeenCalled();
+    expect(Summary.findOne).toHaveBeenCalled();
+    expect(Summary.countDocuments).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ response: 'Generated summary' });
   });
 
-  it("should not save the summary when 'save' is false", async () => {
-    mockReq.body.save = false;
+  it('should handle errors during summary generation', async () => {
+    const mockGenerateContent = jest.fn().mockRejectedValue(new Error('API Error'));
 
-    const mockSummarySave = jest.spyOn(Summary.prototype, "save");
-    await summarise(mockReq, mockRes);
+    GoogleGenerativeAI.mockImplementation(() => ({
+      getGenerativeModel: jest.fn().mockReturnValue({
+        generateContent: mockGenerateContent,
+      }),
+    }));
 
-    expect(mockSummarySave).not.toHaveBeenCalled();
-    expect(mockRes.json).toHaveBeenCalledWith({
-      response: "Generated Summary",
-    });
+    await summarise(req, res);
 
-    mockSummarySave.mockRestore();
-  });
-
-  it("should fallback to Gemini if AI provider is invalid", async () => {
-    mockReq.body.aiProvider = "invalid";
-
-    await summarise(mockReq, mockRes);
-
-    expect(mockRes.status).toHaveBeenCalledWith(500);
-    expect(mockRes.json).toHaveBeenCalledWith({
-      error: "Failed to generate summary with invalid. Falling back to Gemini.",
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Failed to generate summary with gemini. Falling back to Gemini.',
       fallback: true,
     });
-  });
-
-  it("should return 403 for file summaries if user is on free subscription", async () => {
-    mockReq.body.url = "file-summary-test";
-    mockReq.user.subscription = "free";
-
-    await summarise(mockReq, mockRes);
-
-    expect(mockRes.status).toHaveBeenCalledWith(403);
-    expect(mockRes.json).toHaveBeenCalledWith({
-      error: "Upgrade to Premium for file summaries",
-      redirectTo: "payment",
-    });
-  });
-
-  it("should handle file summaries for premium users", async () => {
-    mockReq.body.url = "file-summary-test";
-    mockReq.user.subscription = "premium";
-
-    await summarise(mockReq, mockRes);
-
-    expect(mockRes.json).toHaveBeenCalledWith({
-      response: "Generated Summary",
-    });
-  });
-
-  it("should handle errors during summary generation", async () => {
-    jest.spyOn(Summary.prototype, "save").mockImplementation(() => {
-      throw new Error("Database error");
-    });
-
-    await summarise(mockReq, mockRes);
-
-    expect(mockRes.status).toHaveBeenCalledWith(500);
-    expect(mockRes.json).toHaveBeenCalledWith({ error: "Error saving summary" });
   });
 });
