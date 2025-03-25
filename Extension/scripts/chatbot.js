@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Check if user is authenticated and has premium subscription before allowing chat
   async function checkAuthAndSubscription(callback) {
     try {
-      const profileResponse = await fetch("http://localhost:3000/profile", {
+      const profileResponse = await fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/profile", {
         credentials: "include",
       });
       const profile = await profileResponse.json();
@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function processChat(userMessage, pageContent, url) {
-    fetch("http://localhost:3000/chat", {
+    fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

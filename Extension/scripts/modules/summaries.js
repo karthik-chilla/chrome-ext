@@ -337,10 +337,10 @@ export async function fetchPastSummaries(query = "") {
 
   try {
     const endpoint = query
-      ? `http://localhost:3000/summarize/search?query=${encodeURIComponent(
+      ? `http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/summarize/search?query=${encodeURIComponent(
           query
         )}`
-      : `http://localhost:3000/summaries/summaries`;
+      : `http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/summaries/summaries`;
 
     const response = await fetch(endpoint, {
       credentials: "include",
@@ -516,7 +516,7 @@ async function handleDeleteClick(e) {
   if (confirm("Are you sure you want to delete this summary?")) {
     try {
       const response = await fetch(
-        `http://localhost:3000/summarize/summaries/${summaryId}`,
+        `http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/summarize/summaries/${summaryId}`,
         {
           method: "DELETE",
           credentials: "include",
@@ -622,7 +622,7 @@ async function handleDownloadClick(e) {
 
   try {
     const response = await fetch(
-      `http://localhost:3000/summarize/download?url=${encodeURIComponent(
+      `http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/summarize/download?url=${encodeURIComponent(
         url
       )}&type=${type}`,
       {

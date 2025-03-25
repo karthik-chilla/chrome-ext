@@ -1,7 +1,7 @@
 // Auth related functions
 export async function checkAuth() {
   try {
-    const response = await fetch("http://localhost:3000/auth/status", {
+    const response = await fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/auth/status", {
       credentials: "include",
     });
     const data = await response.json();

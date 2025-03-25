@@ -13,7 +13,7 @@ function destroyCharts() {
 export async function loadUserAnalytics() {
   try {
 
-    const profileResponse = await fetch("http://localhost:3000/profile", {
+    const profileResponse = await fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/profile", {
       credentials: "include",
     });
     const profile = await profileResponse.json();
@@ -33,7 +33,7 @@ export async function loadUserAnalytics() {
 
     // Fetch user analytics
     const response = await fetch(
-      "http://localhost:3000/summarize/user-analytics",
+      "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/summarize/user-analytics",
       {
         credentials: "include",
       }

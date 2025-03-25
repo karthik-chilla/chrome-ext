@@ -3,7 +3,7 @@ export async function fetchProfile() {
   const userInfo = document.getElementById("user-info");
 
   try {
-    const response = await fetch("http://localhost:3000/profile", {
+    const response = await fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/profile", {
       credentials: "include",
     });
 

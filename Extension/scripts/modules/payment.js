@@ -4,10 +4,10 @@ export async function fetchPlans() {
 
   try {
     const [plansResponse, profileResponse] = await Promise.all([
-      fetch("http://localhost:3000/payment/plans", {
+      fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/payment/plans", {
         credentials: "include",
       }),
-      fetch("http://localhost:3000/profile", { credentials: "include" }),
+      fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/profile", { credentials: "include" }),
     ]);
 
     if (!plansResponse.ok || !profileResponse.ok) {
@@ -78,7 +78,7 @@ function addPaymentEventListeners() {
 async function createCheckoutSession(planId) {
   try {
     const response = await fetch(
-      "http://localhost:3000/payment/create-checkout-session",
+      "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/payment/create-checkout-session",
       {
         method: "POST",
         headers: {
@@ -105,7 +105,7 @@ async function createCheckoutSession(planId) {
 
         // Handle successful payment
         try {
-          await fetch("http://localhost:3000/payment/payment-success", {
+          await fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/payment/payment-success", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -144,7 +144,7 @@ export async function fetchPaymentHistory() {
   }
 
   try {
-    const response = await fetch("http://localhost:3000/payment/history", {
+    const response = await fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/payment/history", {
       credentials: "include",
     });
 

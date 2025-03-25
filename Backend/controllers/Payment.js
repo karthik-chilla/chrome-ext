@@ -68,8 +68,8 @@ async function createCheckoutSession(req, res) {
         },
       ],
       mode: "payment",
-      success_url: `http://localhost:3000/payment/success?session_id={CHECKOUT_SESSION_ID}&token=${req.cookies.jwt}`,
-      cancel_url: `http://localhost:3000/payment/cancel?token=${req.cookies.jwt}`,
+      success_url: `http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/payment/success?session_id={CHECKOUT_SESSION_ID}&token=${req.cookies.jwt}`,
+      cancel_url: `http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/payment/cancel?token=${req.cookies.jwt}`,
       client_reference_id: req.user._id.toString(),
       metadata: {
         userId: req.user._id.toString(),

@@ -6,7 +6,7 @@ chrome.runtime.onInstalled.addListener(() => {
 // Handle messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "checkAuth") {
-    fetch("http://localhost:3000/auth/status", {
+    fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/auth/status", {
       method: "GET",
       credentials: "include",
     })
@@ -31,10 +31,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // Listen for Google Auth completion
 chrome.webNavigation?.onCompleted.addListener(
   (details) => {
-    if (details.url.includes("localhost:3000/auth/google/callback")) {
+    if (details.url.includes("ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/auth/google/callback")) {
       // Refresh the auth status
       chrome.runtime.sendMessage({ action: "checkAuth" });
     }
   },
-  { url: [{ urlContains: "localhost:3000/auth/google/callback" }] }
+  { url: [{ urlContains: "ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/auth/google/callback" }] }
 );
