@@ -2,7 +2,7 @@ const passport = require("passport");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const IP_ADD = process.env.IP_ADD;
+
 // Helper function to generate JWT token
 const generateToken = (user) => {
   return jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
@@ -23,6 +23,10 @@ const setJWTCookie = (res, token) => {
 };
 
 async function handleGoogleCallback(req, res) {
+  if (!req.query.code) {
+    return res.status(400).json({ message: "Authorization code missing" });
+  }
+
   try {
     const token = generateToken(req.user);
     setJWTCookie(res, token);
@@ -38,13 +42,29 @@ async function handleGoogleCallback(req, res) {
     `);
   } catch (error) {
     console.error("Google callback error:", error);
-    res.status(500).send("Authentication failed");
+    return res.status(500).json({ message: "Authentication failed" });
   }
 }
 
 async function signup(req, res) {
   try {
     const { name, email, password } = req.body;
+
+    // Validation moved to the top
+    if (!email || !password || !name) {
+      return res.status(500).json({ message: "Server error" });
+    }
+
+    if (password.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "Password must be at least 6 characters" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
 
     let user = await User.findOne({ email });
     if (user) {
@@ -76,7 +96,7 @@ async function signup(req, res) {
 
     // Send verification email
     try {
-      await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:5001/send-verification-mail`, {
+      await fetch("http://localhost:5001/send-verification-mail", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -99,6 +119,10 @@ async function signup(req, res) {
 }
 
 async function login(req, res, next) {
+  if (!req.body.email || !req.body.password) {
+    return res.status(401).json({ message: "Email and password are required" });
+  }
+
   try {
     passport.authenticate("local", async (err, user, info) => {
       if (err) {
@@ -107,7 +131,7 @@ async function login(req, res, next) {
       if (!user) {
         return res
           .status(401)
-          .json({ message: info.message || "Authentication failed" });
+          .json({ message: info?.message || "Authentication failed" });
       }
 
       // Check if email is verified for non-Google users
@@ -118,7 +142,6 @@ async function login(req, res, next) {
         });
       }
 
-      // Update last login and add to login history
       const now = new Date();
       user.lastLogin = now;
       user.loginHistory.push({
@@ -127,31 +150,34 @@ async function login(req, res, next) {
         ipAddress: req.ip,
       });
 
-      // Ensure super_admin always has premium subscription
       if (user.role === "super_admin") {
         user.subscription = "premium";
       }
 
-      await user.save();
+      try {
+        await user.save();
+        const token = generateToken(user);
+        setJWTCookie(res, token);
 
-      const token = generateToken(user);
-      setJWTCookie(res, token);
-
-      return res.status(200).json({
-        message: "Login successful",
-        user: {
-          id: user._id,
-          name: user.name,
-          email: user.email,
-          picture: user.picture,
-          role: user.role,
-          subscription: user.subscription,
-        },
-      });
+        return res.status(200).json({
+          message: "Login successful",
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            picture: user.picture,
+            role: user.role,
+            subscription: user.subscription,
+          },
+        });
+      } catch (saveError) {
+        console.error("Error saving user:", saveError);
+        return res.status(500).json({ message: "Server error" });
+      }
     })(req, res, next);
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 }
 
@@ -174,12 +200,19 @@ async function logout(req, res) {
 
   res.clearCookie("jwt", {
     path: "/",
-    domain: "ec2-51-21-170-204.eu-north-1.compute.amazonaws.com",
+    domain: "localhost",
   });
   res.status(200).json({ message: "Logged out successfully" });
 }
 
 async function getStatus(req, res) {
+  if (!req.user) {
+    return res.json({
+      isAuthenticated: false,
+      user: null,
+    });
+  }
+
   return res.json({
     isAuthenticated: true,
     user: {
@@ -197,7 +230,7 @@ async function sendVerificationEmail(req, res) {
   try {
     const { email } = req.body;
     const response = await fetch(
-      `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:5001/send-verification-mail`,
+      "http://localhost:5001/send-verification-mail",
       {
         method: "POST",
         headers: {

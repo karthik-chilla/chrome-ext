@@ -332,17 +332,15 @@
 // }
 
 // Summaries related functions
-const IP_ADD = process.env.IP_ADD;
-
 export async function fetchPastSummaries(query = "") {
   const pastSummariesList = document.getElementById("past-summaries-list");
 
   try {
     const endpoint = query
-      ? `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summarize/search?query=${encodeURIComponent(
+      ? `http://localhost:3000/summarize/search?query=${encodeURIComponent(
           query
         )}`
-      : `http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summaries/summaries`;
+      : `http://localhost:3000/summaries/summaries`;
 
     const response = await fetch(endpoint, {
       credentials: "include",

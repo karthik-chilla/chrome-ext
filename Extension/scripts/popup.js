@@ -5,8 +5,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const summary = document.getElementById("summary");
   const summaryTypeCheckbox = document.getElementById("summaryType");
   const aiProviderSelect = document.getElementById("ai-provider");
-  const IP_ADD = process.env.IP_ADD;
-
 
   // Mode switching
   const summaryModeBtn = document.getElementById("summary-mode-btn");
@@ -50,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Check user subscription before enabling chatbot
   chatbotModeBtn.addEventListener("click", async function () {
     try {
-      const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/profile`, {
+      const response = await fetch("http://localhost:3000/profile", {
         credentials: "include",
       });
       const profile = await response.json();
@@ -238,7 +236,7 @@ document.addEventListener("DOMContentLoaded", function () {
       saveButton.textContent = "Saving...";
 
       try {
-        const response = await fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summarize`, {
+        const response = await fetch("http://localhost:3000/summarize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -273,7 +271,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function fetchSummary(text, type, url, domain, save, aiProvider) {
-    fetch(`http://ec2-51-21-170-204.eu-north-1.compute.amazonaws.com:3000/summarize`, {
+    fetch("http://localhost:3000/summarize", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
