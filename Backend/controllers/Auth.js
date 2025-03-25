@@ -243,6 +243,8 @@ async function verifyEmail(req, res) {
     const { email, verified } = req.body;
     console.log("Email:", email);
     console.log("Verified:", verified);
+    console.log("Email:", email);
+    console.log("Verified:", verified);
     const user = await User.findOneAndUpdate(
       { email },
       { verified },

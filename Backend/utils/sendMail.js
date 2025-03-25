@@ -1,5 +1,4 @@
-import nodemailer from "nodemailer";
-
+const nodemailer = require("nodemailer");
 // Create reusable transporter object using Gmail SMTP
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -46,4 +45,4 @@ async function sendMail(to, subject, text, html) {
   }
 }
 
-module.exports = { sendMail };
+module.exports = sendMail;
