@@ -23,15 +23,19 @@ const setJWTCookie = (res, token) => {
 };
 
 async function handleGoogleCallback(req, res) {
-  if (!req.query.code) {
-    return res.status(400).json({ message: "Authorization code missing" });
-  }
-
   try {
+    if (!req.query.code) {
+      return res.status(400).json({ message: "Authorization code missing" });
+    }
+
+    if (!req.user) {
+      return res.status(500).json({ message: "Authentication failed" });
+    }
+
     const token = generateToken(req.user);
     setJWTCookie(res, token);
 
-    res.send(`
+    return res.status(200).send(`
       <html>
         <body>
           <script>
@@ -50,15 +54,15 @@ async function signup(req, res) {
   try {
     const { name, email, password } = req.body;
 
-    // Validation moved to the top
+    // Validation
     if (!email || !password || !name) {
       return res.status(500).json({ message: "Server error" });
     }
 
     if (password.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "Password must be at least 6 characters" });
+      return res.status(400).json({ 
+        message: "Password must be at least 6 characters" 
+      });
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -66,8 +70,8 @@ async function signup(req, res) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    let user = await User.findOne({ email });
-    if (user) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
@@ -75,7 +79,7 @@ async function signup(req, res) {
 
     const now = new Date();
 
-    user = new User({
+    const user = new User({
       name,
       email,
       password: hashedPassword,
@@ -114,7 +118,7 @@ async function signup(req, res) {
     });
   } catch (err) {
     console.error("Signup error:", err);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 }
 
@@ -123,62 +127,43 @@ async function login(req, res, next) {
     return res.status(401).json({ message: "Email and password are required" });
   }
 
-  try {
-    passport.authenticate("local", async (err, user, info) => {
-      if (err) {
-        return res.status(500).json({ message: "Server error" });
-      }
-      if (!user) {
-        return res
-          .status(401)
-          .json({ message: info?.message || "Authentication failed" });
-      }
+  passport.authenticate("local", async (err, user, info) => {
+    if (err) {
+      return res.status(500).json({ message: "Server error" });
+    }
+    if (!user) {
+      return res.status(401).json({ message: info?.message || "Invalid credentials" });
+    }
 
-      // Check if email is verified for non-Google users
-      if (!user.googleId && !user.verified) {
-        return res.status(403).json({
-          message: "Please verify your email before logging in",
-          needsVerification: true,
-        });
-      }
-
-      const now = new Date();
-      user.lastLogin = now;
+    try {
+      const token = generateToken(user);
+      setJWTCookie(res, token);
+      
+      // Update login history
+      user.lastLogin = new Date();
+      if (!user.loginHistory) user.loginHistory = [];
       user.loginHistory.push({
-        timestamp: now,
+        timestamp: user.lastLogin,
         action: "login",
-        ipAddress: req.ip,
+        ipAddress: req.ip
       });
+      await user.save();
 
-      if (user.role === "super_admin") {
-        user.subscription = "premium";
-      }
-
-      try {
-        await user.save();
-        const token = generateToken(user);
-        setJWTCookie(res, token);
-
-        return res.status(200).json({
-          message: "Login successful",
-          user: {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            picture: user.picture,
-            role: user.role,
-            subscription: user.subscription,
-          },
-        });
-      } catch (saveError) {
-        console.error("Error saving user:", saveError);
-        return res.status(500).json({ message: "Server error" });
-      }
-    })(req, res, next);
-  } catch (error) {
-    console.error("Login error:", error);
-    return res.status(500).json({ message: "Server error" });
-  }
+      return res.status(200).json({
+        message: "Login successful",
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          subscription: user.subscription
+        }
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
+  })(req, res, next);
 }
 
 async function logout(req, res) {
