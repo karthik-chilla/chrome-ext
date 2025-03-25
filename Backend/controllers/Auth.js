@@ -100,7 +100,7 @@ async function signup(req, res) {
 
     // Send verification email
     try {
-      await fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:5001/send-verification-mail", {
+      await fetch("http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/send-verification-mail", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -215,7 +215,7 @@ async function sendVerificationEmail(req, res) {
   try {
     const { email } = req.body;
     const response = await fetch(
-      "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:5001/send-verification-mail",
+      "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000/send-verification-mail",
       {
         method: "POST",
         headers: {

@@ -6,19 +6,21 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const app = express();
+// const app = express();
 app.use(
-  cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5000",
-      "http://localhost:5001",
-      "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000",
-      "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:5000",
-      "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:5001",
-    ],
-    credentials: true,
-  })
+  cors(
+    // {
+    // origin: [
+    //   "http://localhost:3000",
+    //   "http://localhost:5000",
+    //   "http://localhost:5001",
+    //   "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:3000",
+    //   "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:5000",
+    //   "http://ec2-51-20-31-235.eu-north-1.compute.amazonaws.com:5001",
+    // ],
+    // credentials: true,
+  // }
+)
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
