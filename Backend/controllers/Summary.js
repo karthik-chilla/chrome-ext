@@ -12,7 +12,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 const GROQ_MODELS = {
   gemma: "gemma2-9b-it",
   llama: "llama-3.2-1b-preview",
-  mixtral: "mixtral-8x7b-32768",
+  mistral: "mistral-saba-24b",
 };
 
 function truncateText(text, maxTokens = 30000) {
@@ -125,7 +125,16 @@ async function summarise(req, res) {
           user: req.user._id,
         });
 
-        const tagIds = await generateTags(text, req.user._id);
+        let tagIds = [];
+        try {
+          tagIds = await generateTags(text, req.user._id);
+        } catch (tagError) {
+          console.error(
+            "Tag generation error, proceeding without tags:",
+            tagError
+          );
+          tagIds = []; // Ensure tagIds is an empty array if tag generation fails
+        }
 
         if (summary) {
           // Update existing summary
@@ -182,9 +191,9 @@ async function summarise(req, res) {
         if (totalSummaries > 100) {
           const leastUsedRecord = await Summary.findOne({
             user: req.user._id,
-          }).sort({
-            lastAccessed: 1,
-          });
+          })
+            .sort({ lastAccessed: 1 })
+            .exec(); // Ensure exec() is called to resolve the query
           if (leastUsedRecord) {
             await Summary.findByIdAndDelete(leastUsedRecord._id);
           }
@@ -260,96 +269,6 @@ async function summarise(req, res) {
         fallback: true,
       });
     }
-    // Log the generated summary
-
-    // if (save && !isFileSummary) {
-    //   try {
-    //     // Find existing summary
-    //     let existingSummary = await Summary.findOne({
-    //       url,
-    //       user: req.user._id,
-    //     });
-
-    //     const tagIds = await generateTags(text, req.user._id);
-
-    //     if (existingSummary) {
-    //       // Update existing summary
-    //       existingSummary.text = text;
-    //       existingSummary.domain = domain;
-    //       existingSummary.title = title;
-    //       existingSummary.lastAccessed = new Date();
-    //       existingSummary.tags = tagIds;
-    //       existingSummary.isSaved = true;
-
-    //       // Update the appropriate summary field and AI provider based on type
-    //       if (type === "short") {
-    //         existingSummary.shortSummary = generatedSummary;
-    //         existingSummary.aiProvider_short = aiProvider;
-    //       } else {
-    //         existingSummary.longSummary = generatedSummary;
-    //         existingSummary.aiProvider_long = aiProvider;
-    //       }
-
-    //       await existingSummary.save();
-    //     } else {
-    //       // Create new summary
-    //       const summaryData = {
-    //         user: req.user._id,
-    //         url,
-    //         domain,
-    //         title,
-    //         text,
-    //         lastAccessed: new Date(),
-    //         tags: tagIds,
-    //         isSaved: true,
-    //       };
-
-    //       // Set the appropriate summary field and AI provider based on type
-    //       if (type === "short") {
-    //         summaryData.shortSummary = generatedSummary;
-    //         summaryData.aiProvider_short = aiProvider;
-    //       } else {
-    //         summaryData.longSummary = generatedSummary;
-    //         summaryData.aiProvider_long = aiProvider;
-    //       }
-
-    //       existingSummary = new Summary(summaryData);
-    //       await existingSummary.save();
-    //     }
-
-    //     // Update user's summary count and history
-    //     const summaryHistoryEntry = {
-    //       timestamp: new Date(),
-    //       type,
-    //       url,
-    //       domain,
-    //     };
-
-    //     await User.findByIdAndUpdate(req.user._id, {
-    //       $inc: { summaryCount: 1 },
-    //       $push: { summaryHistory: summaryHistoryEntry },
-    //     });
-
-    //     // Clean up old summaries if limit reached
-    //     const totalSummaries = await Summary.countDocuments({
-    //       user: req.user._id,
-    //     });
-
-    //     if (totalSummaries > 100) {
-    //       const leastUsedRecord = await Summary.findOne({
-    //         user: req.user._id,
-    //       }).sort({
-    //         lastAccessed: 1,
-    //       });
-    //       if (leastUsedRecord) {
-    //         await Summary.findByIdAndDelete(leastUsedRecord._id);
-    //       }
-    //     }
-    //   } catch (error) {
-    //     console.error("Error saving summary:", error);
-    //     return res.status(500).json({ error: "Error saving summary" });
-    //   }
-    // }
 
     res.json({ response: generatedSummary });
   } catch (error) {

@@ -1,130 +1,303 @@
-const summarise = require('../../controllers/Summary');
-const { Summary, Tag } = require('../../models/Summary');
-const User = require('../../models/User');
-const axios = require('axios');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const summarise = require("../../controllers/Summary");
 
-jest.mock('../../models/Summary');
-jest.mock('../../models/User');
-jest.mock('axios');
-jest.mock('@google/generative-ai');
+const { Summary, Tag } = require("../../models/Summary");
 
-describe('summarise', () => {
+const User = require("../../models/User");
+
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+
+const axios = require("axios");
+
+jest.mock("../../models/Summary");
+
+jest.mock("../../models/User");
+
+jest.mock("@google/generative-ai");
+
+jest.mock("axios");
+
+describe("summarise controller", () => {
   let req, res;
 
   beforeEach(() => {
     req = {
       user: {
-        _id: 'userId',
-        subscription: 'premium',
-        role: 'user',
+        _id: "user123",
+
+        subscription: "free",
+
+        role: "user",
+
+        summaryCount: 0,
+
+        summaryHistory: [],
       },
+
       body: {
-        text: 'This is a test text.',
-        type: 'short',
-        url: 'http://example.com',
-        domain: 'example.com',
-        title: 'Test Title',
-        save: true,
-        aiProvider: 'gemini',
+        text: "Sample text for summarization",
+
+        type: "short",
+
+        url: "http://example.com",
+
+        domain: "example.com",
+
+        title: "Sample Title",
+
+        save: false,
+
+        aiProvider: "gemini",
       },
     };
 
     res = {
       status: jest.fn().mockReturnThis(),
+
       json: jest.fn(),
     };
 
-    process.env.GEMINI_API_KEY = 'test-gemini-api-key';
-    process.env.GROQ_API_KEY = 'test-groq-api-key';
+    Summary.findOne.mockImplementation(() => ({
+      sort: jest.fn().mockReturnThis(),
+      exec: jest.fn().mockResolvedValue(null),
+    }));
+
+    Summary.prototype.save = jest.fn().mockResolvedValue({});
   });
 
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  it('should return 401 if user is not authenticated', async () => {
+  it("should return 401 if user is not authenticated", async () => {
     req.user = null;
 
     await summarise(req, res);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Not authenticated' });
+
+    expect(res.json).toHaveBeenCalledWith({ error: "Not authenticated" });
   });
 
-  it('should return 403 if user is on free subscription and tries to summarize a file', async () => {
-    req.user.subscription = 'free';
-    req.body.url = 'file-summary-test';
-
-    await summarise(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({
-      error: 'Upgrade to Premium for file summaries',
-      redirectTo: 'payment',
-    });
-  });
-
-  it('should return 403 if URL is from a restricted domain', async () => {
-    req.body.url = 'http://youtube.com';
-
-    await summarise(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(res.json).toHaveBeenCalledWith({
-      error: "This extension doesn't work on streaming/video websites",
-      isRestricted: true,
-    });
-  });
-
-  it('should return 400 if URL is invalid', async () => {
-    req.body.url = 'invalid-url';
-
-    await summarise(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Invalid URL' });
-  });
-
-  it('should generate summary with Gemini and save it', async () => {
+  it("should generate a summary with Gemini and return it", async () => {
     const mockGenerateContent = jest.fn().mockResolvedValue({
-      response: { text: jest.fn().mockResolvedValue('Generated summary') },
+      response: { text: () => "Generated short summary" },
     });
 
     GoogleGenerativeAI.mockImplementation(() => ({
-      getGenerativeModel: jest.fn().mockReturnValue({
+      getGenerativeModel: () => ({
         generateContent: mockGenerateContent,
       }),
     }));
-
-    Summary.findOne.mockResolvedValue(null);
-    Tag.findOne.mockResolvedValue(null);
-    Tag.create.mockResolvedValue({ _id: 'tagId' });
-    Summary.countDocuments.mockResolvedValue(50);
 
     await summarise(req, res);
 
-    expect(mockGenerateContent).toHaveBeenCalled();
-    expect(Summary.findOne).toHaveBeenCalled();
-    expect(Summary.countDocuments).toHaveBeenCalled();
-    expect(res.json).toHaveBeenCalledWith({ response: 'Generated summary' });
+    expect(mockGenerateContent).toHaveBeenCalledWith(
+      expect.stringContaining("Summarize the following content")
+    );
+
+    expect(res.json).toHaveBeenCalledWith({
+      response: "Generated short summary",
+    });
   });
 
-  it('should handle errors during summary generation', async () => {
-    const mockGenerateContent = jest.fn().mockRejectedValue(new Error('API Error'));
+  it("should generate a summary with Groq and return it", async () => {
+    req.body.aiProvider = "gemma";
 
-    GoogleGenerativeAI.mockImplementation(() => ({
-      getGenerativeModel: jest.fn().mockReturnValue({
-        generateContent: mockGenerateContent,
+    axios.post.mockResolvedValue({
+      data: { choices: [{ message: { content: "Groq generated summary" } }] },
+    });
+
+    await summarise(req, res);
+
+    expect(axios.post).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "https://api.groq.com/openai/v1/chat/completions"
+      ),
+
+      expect.objectContaining({
+        model: "gemma2-9b-it",
       }),
-    }));
+
+      expect.any(Object)
+    );
+
+    expect(res.json).toHaveBeenCalledWith({
+      response: "Groq generated summary",
+    });
+  });
+
+  it("should handle Groq API errors and return a fallback message", async () => {
+    req.body.aiProvider = "gemma";
+
+    axios.post.mockRejectedValue(new Error("Groq API error"));
 
     await summarise(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
+
     expect(res.json).toHaveBeenCalledWith({
-      error: 'Failed to generate summary with gemini. Falling back to Gemini.',
+      error: "Failed to generate summary with gemma. Falling back to Gemini.",
+
       fallback: true,
     });
+  });
+
+  it("should handle invalid AI provider", async () => {
+    req.body.aiProvider = "invalid";
+
+    await summarise(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Failed to generate summary with invalid. Falling back to Gemini.",
+
+      fallback: true,
+    });
+  });
+
+  it("should save the summary and update user data when save is true", async () => {
+    req.body.save = true;
+    req.body.response = "Existing summary";
+    Summary.findOne.mockResolvedValue(null);
+    Tag.findOne.mockResolvedValue(null);
+    Tag.create.mockResolvedValue({ _id: "tag123" });
+    Summary.prototype.save.mockResolvedValue({});
+    User.findByIdAndUpdate.mockResolvedValue({});
+    Summary.countDocuments.mockResolvedValue(1);
+    await summarise(req, res);
+    expect(Summary.prototype.save).toHaveBeenCalled();
+    expect(User.findByIdAndUpdate).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ response: "Existing summary" });
+  });
+
+  it("should update an existing summary if found when saving", async () => {
+    req.body.save = true;
+
+    req.body.response = "Updated summary";
+
+    Summary.findOne.mockResolvedValue({
+      _id: "summary123",
+
+      save: jest.fn().mockResolvedValue({}),
+    });
+
+    Tag.findOne.mockResolvedValue(null);
+
+    Tag.create.mockResolvedValue({ _id: "tag123" });
+
+    User.findByIdAndUpdate.mockResolvedValue({});
+
+    Summary.countDocuments.mockResolvedValue(1);
+
+    await summarise(req, res);
+
+    expect(Summary.prototype.save).toHaveBeenCalled();
+
+    expect(res.json).toHaveBeenCalledWith({ response: "Updated summary" });
+  });
+
+  it("should handle summary saving errors", async () => {
+    req.body.save = true;
+
+    req.body.response = "Existing summary";
+
+    Summary.findOne.mockRejectedValue(new Error("Database error"));
+
+    await summarise(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+
+    expect(res.json).toHaveBeenCalledWith({ error: "Error saving summary" });
+  });
+
+  it("should delete the least used summary if the total summaries exceed 100", async () => {
+    req.body.save = true;
+
+    req.body.response = "Existing summary";
+
+    Summary.findOne
+      .mockResolvedValueOnce(null) // First call for checking existing summary
+      .mockImplementationOnce(() => ({
+        sort: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue({ _id: "leastUsedSummary" }),
+      }));
+    Summary.countDocuments.mockResolvedValue(101);
+    Summary.findByIdAndDelete.mockResolvedValue({});
+
+    await summarise(req, res);
+
+    expect(Summary.findByIdAndDelete).toHaveBeenCalledWith("leastUsedSummary");
+
+    expect(res.json).toHaveBeenCalledWith({ response: "Existing summary" });
+  });
+
+  it("should return 403 for file summary with free subscription", async () => {
+    req.body.url = "file-summary-123";
+
+    await summarise(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Upgrade to Premium for file summaries",
+
+      redirectTo: "payment",
+    });
+  });
+
+  it("should return 403 for restricted web domains", async () => {
+    req.body.url = "https://youtube.com/video";
+
+    await summarise(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+
+    expect(res.json).toHaveBeenCalledWith({
+      error: "This extension doesn't work on streaming/video websites",
+
+      isRestricted: true,
+    });
+  });
+
+  it("should handle invalid URL", async () => {
+    req.body.url = "invalid-url";
+
+    await summarise(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+
+    expect(res.json).toHaveBeenCalledWith({ error: "Invalid URL" });
+  });
+
+  it("should handle errors during tag generation", async () => {
+    req.body.save = true;
+
+    req.body.response = "Existing summary";
+
+    Summary.findOne.mockResolvedValue(null);
+
+    Tag.findOne.mockRejectedValue(new Error("Tag error"));
+
+    Summary.prototype.save.mockResolvedValue({});
+
+    await summarise(req, res);
+
+    expect(Summary.prototype.save).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({ response: "Existing summary" });
+  });
+
+  it("should save summary with empty tags when tag generation fails", async () => {
+    req.body.save = true;
+    req.body.response = "Existing summary";
+
+    Summary.findOne.mockResolvedValue(null);
+    Tag.findOne.mockRejectedValue(new Error("Tag error"));
+    Summary.prototype.save.mockResolvedValue({});
+
+    await summarise(req, res);
+
+    const savedSummary = Summary.prototype.save.mock.calls[0][0] || {};
+    expect(savedSummary.tags).toEqual([]);
   });
 });
