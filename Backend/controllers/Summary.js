@@ -114,7 +114,7 @@ async function summarise(req, res) {
       title,
       save,
       aiProvider = "gemini",
-      response: existingSummary, // Add this to handle save requests
+      response: existingSummary,
     } = req.body;
 
     // If this is a save request with existing summary, skip generation
