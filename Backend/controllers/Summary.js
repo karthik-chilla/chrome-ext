@@ -12,7 +12,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 const GROQ_MODELS = {
   gemma: "gemma2-9b-it",
   llama: "llama-3.2-1b-preview",
-  mistral: "mistral-saba-24b",
+  qwen32b: "qwen-2.5-coder-32b",
 };
 
 function truncateText(text, maxTokens = 30000) {
