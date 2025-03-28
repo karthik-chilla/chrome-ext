@@ -34,7 +34,6 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
-    "pdf-parse": "^1.1.1",
     "stripe": "^17.7.0",
     "textract": "^2.5.0"
   },

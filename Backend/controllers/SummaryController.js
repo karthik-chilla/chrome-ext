@@ -24,9 +24,6 @@ async function deleteSummary(req, res) {
 
 async function generateSummary(req, res) {
   try {
-    if (!res || typeof res.status !== "function" || typeof res.json !== "function") {
-      throw new Error("Invalid response object in generateSummary");
-    }
     await summarise(req, res);
   } catch (error) {
     console.error("Error generating summary:", error);

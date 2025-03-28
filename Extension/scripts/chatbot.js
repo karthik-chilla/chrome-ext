@@ -5,30 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const chatbotLoader = document.getElementById("chatbot-loader");
 
   // Check if user is authenticated and has premium subscription before allowing chat
-  async function checkAuthAndSubscription(callback) {
-    try {
-      const profileResponse = await fetch("http://localhost:3000/profile", {
-        credentials: "include",
-      });
-      const profile = await profileResponse.json();
-
-      if (
-        profile.subscription === "premium" ||
-        profile.role === "super_admin"
-      ) {
-        callback(true);
-      } else {
-        addBotMessage(
-          "This feature is only available to Premium users. Please upgrade your subscription to use the chatbot."
-        );
-        callback(false);
-      }
-    } catch (error) {
-      console.error("Error checking subscription:", error);
-      addBotMessage("Please log in to use the chatbot.");
-      callback(false);
-    }
-  }
+  
 
   // Send message when button is clicked
   sendButton.addEventListener("click", function () {
@@ -46,8 +23,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const message = chatInput.value.trim();
     if (!message) return;
 
-    checkAuthAndSubscription(function (isAuthorized) {
-      if (!isAuthorized) return;
 
       // Add user message to chat
       addUserMessage(message);
@@ -75,7 +50,6 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         );
       });
-    });
   }
 
   function getPageContent() {
